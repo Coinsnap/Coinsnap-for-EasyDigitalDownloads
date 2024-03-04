@@ -1,4 +1,7 @@
-# Bitcoin and Ligtning payments for Easy Digital Downloads in WordPress
+![Image of Coinsnap for Easy Digital Downloads](https://coinsnap.io/wp-content/uploads/2024/01/coinsnap-for-easydigitaldownload.png)
+# Coinsnap for Easy Digital Downloads in WordPress
+## Accept Bitcoin and Lightning Payments with Easy Digital Downloads ##
+
 
 === Coinsnap for Easy Digital Downloads 1.1 ===
 Contributors: coinsnap
