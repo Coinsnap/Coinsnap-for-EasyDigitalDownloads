@@ -1,13 +1,22 @@
 <?php
-/**
- * Plugin Name: Coinsnap for Easy Digital Downloads
- * Description: Coinsnap for Easy Digital Downloads
- * Author: Coinsnap
- * Version: 1.1
- * Author URI: https://coinsnap.io/
- * Plugin URI: https://coinsnap.io/ 
- */
-
+/*
+ * Plugin Name:     Coinsnap for Easy Digital Downloads
+ * Plugin URI:      https://www.coinsnap.io
+ * Description:     Provides a <a href="https://coinsnap.io">Coinsnap</a>  - Bitcoin + Lightning Payment Gateway for Easy Digital Downloads.
+ * Version:         1.0.0
+ * Author:          Coinsnap
+ * Author URI:      https://coinsnap.io/
+ * Text Domain:     coinsnap-for-easydigitaldownloads
+ * Domain Path:     /languages
+ * Requires PHP:    7.4
+ * Tested up to:    6.6.1
+ * Requires at least: 5.2
+ * EDD tested up to: 3.3.3
+ * License:         GPL2
+ * License URI:     https://www.gnu.org/licenses/gpl-2.0.html
+ *
+ * Network:         true
+ */ 
 
 defined('ABSPATH') || exit;
 define( 'COINSNAP_REFERRAL_CODE', 'D18876' );
@@ -16,7 +25,7 @@ include_once(ABSPATH . 'wp-admin/includes/plugin.php' );
 require_once(ABSPATH . "wp-content/plugins/easy-digital-downloads/easy-digital-downloads.php");
 require_once(ABSPATH . "wp-content/plugins/easy-digital-downloads/includes/payments/class-edd-payment.php");
 
-require_once(dirname(__FILE__) . "/library/autoload.php");
+require_once(dirname(__FILE__) . "/library/loader.php");
 
 
 final class EDD_Coinsnap
@@ -159,7 +168,7 @@ final class EDD_Coinsnap
     {
         global $edd_options;
         if (! wp_verify_nonce($purchase_data['gateway_nonce'], 'edd-gateway')) {
-            wp_die(__('Nonce verification has failed', 'easy-digital-downloads'), __('Error', 'easy-digital-downloads'), array( 'response' => 403 ));
+            wp_die(esc_html__('Nonce verification has failed', 'easy-digital-downloads'), esc_html__('Error', 'easy-digital-downloads'), array( 'response' => 403 ));
         }        
         
         $webhook_url = $this->get_webhook_url();
@@ -190,10 +199,17 @@ final class EDD_Coinsnap
 
         
         if (! $payment_id) {                    
-            edd_record_gateway_error(__('Payment Error', 'easy-digital-downloads'), sprintf(__('Payment creation failed before sending buyer to Coinsnap. Payment data: %s', 'easy-digital-downloads'), json_encode($payment_data)), $payment_id);
+            edd_record_gateway_error(
+                esc_html__('Payment Error', 'easy-digital-downloads'), 
+                sprintf(
+                    /* translators: 1: Payment data */
+                    esc_html__('Payment creation failed before sending buyer to Coinsnap. Payment data: %1$s', 'easy-digital-downloads'), wp_json_encode($payment_data)),
+                $payment_id);
             
             edd_send_back_to_checkout('?payment-mode=' . $purchase_data['post_data']['edd-gateway']);
-        } else {            
+        }
+        
+        else {            
             $amount =  $purchase_data['price'];
 		    $redirectUrl = edd_get_success_page_uri();
             
@@ -230,7 +246,11 @@ final class EDD_Coinsnap
                 exit;
             } else {
                 
-                edd_record_gateway_error(__('Payment Error', 'easy-digital-downloads'), sprintf(__('Payment creation failed before sending buyer to Coinsnap. Payment data: %s', 'easy-digital-downloads'), json_encode($payment_data)), $payment_id);
+                edd_record_gateway_error(
+                    esc_html__('Payment Error', 'easy-digital-downloads'), 
+                    sprintf(
+                        /* translators: 1: Payment data */    
+                        esc_html__('Payment creation failed before sending buyer to Coinsnap. Payment data: %1$s', 'easy-digital-downloads'), wp_json_encode($payment_data)), $payment_id);
                 
                 edd_send_back_to_checkout('?payment-mode=' . $purchase_data['post_data']['edd-gateway']);
             }
@@ -238,8 +258,8 @@ final class EDD_Coinsnap
     }
 
     public function process_webhook() {
-		if ( ! isset( $_GET['edd-listener'] ) || $_GET['edd-listener'] !== 'coinsnap' ) {
-			return;
+        if (null === ( filter_input(INPUT_GET,'edd-listener') ) || filter_input(INPUT_GET,'edd-listener') !== 'coinsnap'){
+            return;
         }
 
         $notify_json = file_get_contents('php://input');            

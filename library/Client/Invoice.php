@@ -18,26 +18,27 @@ class Invoice extends AbstractClient{
         ?string $referralCode = null,
         ?array $metaData = null,
         ?InvoiceCheckoutOptions $checkoutOptions = null): \Coinsnap\Result\Invoice {
-        
+
         $url = $this->getApiUrl().''.COINSNAP_SERVER_PATH.'/'.urlencode($storeId).'/invoices';
         $headers = $this->getRequestHeaders();
         $method = 'POST';
 
         // Prepare metadata.
-        $metaDataMerged = [];
-        if(!empty($orderId)) $metaDataMerged['orderNumber'] = $orderId;
-        if(!empty($customerName)) $metaDataMerged['customerName'] = $customerName;
-        
+//        $metaDataMerged = [];
+//        if(!empty($orderId)) $metaDataMerged['orderNumber'] = $orderId;
+//        if(!empty($customerName)) $metaDataMerged['customerName'] = $customerName;
+//        if(!empty($customerName)) $metaDataMerged['object'] = $customerName;
+
         $body_array = array(
             'amount' => $amount !== null ? $amount->__toString() : null,
                 'currency' => $currency,
                 'buyerEmail' => $buyerEmail,
                 'redirectUrl' => $redirectUrl,
                 'orderId' => $orderId,
-                'metadata' => (count($metaDataMerged) > 0)? $metaDataMerged : null,
+                'metadata' => (count($metaData) > 0)? $metaData : null,
                 'referralCode' => $referralCode
         );
-        
+
         $body = wp_json_encode($body_array,JSON_THROW_ON_ERROR);
 
         $response = $this->getHttpClient()->request($method, $url, $headers, $body);
@@ -52,7 +53,7 @@ class Invoice extends AbstractClient{
     }
 
     public function getInvoice(string $storeId,string $invoiceId): \Coinsnap\Result\Invoice {
-        
+
         $url = $this->getApiUrl().''.COINSNAP_SERVER_PATH.'/'.urlencode($storeId).'/invoices/'.urlencode($invoiceId);
         $headers = $this->getRequestHeaders();
         $method = 'GET';

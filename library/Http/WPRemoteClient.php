@@ -4,12 +4,11 @@ declare(strict_types=1);
 namespace Coinsnap\Http;
 
 use Coinsnap\Exception\ConnectException;
-use Coinsnap\WC\Helper\Logger;
 
 /**
  * HTTP Client using cURL to communicate.
  */
-class wpRemoteClient implements ClientInterface {
+class WPRemoteClient implements ClientInterface {
     
     protected $wpRemoteOptions = [];
 
@@ -57,7 +56,6 @@ class wpRemoteClient implements ClientInterface {
             $responseBody = '';
             $responseHeaders = wp_remote_retrieve_headers($response)->getAll();
             $responseBody = $response['body'];
-            //Logger::debug(print_r($responseHeaders,true));
             return new Response($status, $responseBody, $responseHeaders);
         }
     }
