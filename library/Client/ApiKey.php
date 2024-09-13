@@ -2,6 +2,10 @@
 declare(strict_types=1);
 namespace Coinsnap\Client;
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 class ApiKey extends AbstractClient{
 
 //  Create a URL you can send the user to. He/she will be prompted to create an API key that corresponds with your needs.    

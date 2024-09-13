@@ -1,7 +1,10 @@
 <?php
 declare(strict_types=1);
-
 namespace Coinsnap\Client;
+
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 use Coinsnap\Result\InvoicePaymentMethod;
 use Coinsnap\Util\PreciseNumber;
@@ -24,19 +27,17 @@ class Invoice extends AbstractClient{
         $method = 'POST';
 
         // Prepare metadata.
-//        $metaDataMerged = [];
-//        if(!empty($orderId)) $metaDataMerged['orderNumber'] = $orderId;
-//        if(!empty($customerName)) $metaDataMerged['customerName'] = $customerName;
-//        if(!empty($customerName)) $metaDataMerged['object'] = $customerName;
+        if(!isset($metaData['orderNumber']) && !empty($orderId)) $metaData['orderNumber'] = $orderId;
+        if(!isset($metaData['customerName']) && !empty($customerName)) $metaData['customerName'] = $customerName;
 
         $body_array = array(
             'amount' => $amount !== null ? $amount->__toString() : null,
-                'currency' => $currency,
-                'buyerEmail' => $buyerEmail,
-                'redirectUrl' => $redirectUrl,
-                'orderId' => $orderId,
-                'metadata' => (count($metaData) > 0)? $metaData : null,
-                'referralCode' => $referralCode
+            'currency' => $currency,
+            'buyerEmail' => $buyerEmail,
+            'redirectUrl' => $redirectUrl,
+            'orderId' => $orderId,
+            'metadata' => (count($metaData) > 0)? $metaData : null,
+            'referralCode' => $referralCode
         );
 
         $body = wp_json_encode($body_array,JSON_THROW_ON_ERROR);
@@ -48,7 +49,7 @@ class Invoice extends AbstractClient{
                 json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR)
             );
         } else {
-            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), $response);
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
 
@@ -62,7 +63,7 @@ class Invoice extends AbstractClient{
         if ($response->getStatus() === 200) {
             return new \Coinsnap\Result\Invoice(json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR));
         } else {
-            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), $response);
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
 

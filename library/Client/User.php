@@ -1,11 +1,12 @@
 <?php
-
 declare(strict_types=1);
-
 namespace Coinsnap\Client;
 
-class User extends AbstractClient
-{
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+class User extends AbstractClient {
     public function getCurrentUserInformation(): \Coinsnap\Result\User
     {
         $url = $this->getApiUrl() . 'users/me';
@@ -18,7 +19,7 @@ class User extends AbstractClient
                 json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR)
             );
         } else {
-            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), $response);
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
 
@@ -32,7 +33,7 @@ class User extends AbstractClient
         if ($response->getStatus() === 200) {
             return true;
         } else {
-            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), $response);
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
 
@@ -62,7 +63,7 @@ class User extends AbstractClient
                 json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR)
             );
         } else {
-            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), $response);
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
 
@@ -76,7 +77,7 @@ class User extends AbstractClient
         if ($response->getStatus() === 200) {
             return true;
         } else {
-            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), $response);
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
 }

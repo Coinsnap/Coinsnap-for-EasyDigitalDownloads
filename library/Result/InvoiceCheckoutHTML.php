@@ -1,9 +1,10 @@
 <?php
-
 declare(strict_types=1);
-
 namespace Coinsnap\Result;
 
-class InvoiceCheckoutHTML extends AbstractResult
-{
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+class InvoiceCheckoutHTML extends AbstractResult {
 }

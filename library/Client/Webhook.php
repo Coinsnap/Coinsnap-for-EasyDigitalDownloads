@@ -1,11 +1,12 @@
 <?php
-
 declare(strict_types=1);
-
 namespace Coinsnap\Client;
 
-class Webhook extends AbstractClient
-{
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+class Webhook extends AbstractClient {
     /**
      * @param string $storeId
      * @return \Coinsnap\Result\WebhookList
@@ -22,7 +23,7 @@ class Webhook extends AbstractClient
                 json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR)
             );
         } else {
-            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), $response);
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
 
@@ -38,7 +39,7 @@ class Webhook extends AbstractClient
             return new \Coinsnap\Result\Webhook($data);
         }
         else {
-            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), $response);
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
 
@@ -75,7 +76,7 @@ class Webhook extends AbstractClient
             $data = json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR);
             return new \Coinsnap\Result\WebhookCreated($data);
         } else {
-            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), $response);
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
 
@@ -124,7 +125,7 @@ class Webhook extends AbstractClient
             $data = json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR);
             return new \Coinsnap\Result\Webhook($data);
         } else {
-            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), $response);
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
 
@@ -147,7 +148,7 @@ class Webhook extends AbstractClient
         $response = $this->getHttpClient()->request($method, $url, $headers);
 
         if ($response->getStatus() !== 200) {
-            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), $response);
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
 
@@ -172,7 +173,7 @@ class Webhook extends AbstractClient
             }
             return $r;
         } else {
-            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), $response);
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
 }

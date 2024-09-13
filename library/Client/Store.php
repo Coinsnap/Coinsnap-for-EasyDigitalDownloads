@@ -1,14 +1,16 @@
 <?php
 declare(strict_types=1);
-
 namespace Coinsnap\Client;
+
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 class Store extends AbstractClient{
 
-    public function getStore($storeId): \Coinsnap\Result\Store
-    {
-        $url = $this->getApiUrl().COINSNAP_SERVER_PATH.'/' . urlencode($storeId);
+    public function getStore($storeId): \Coinsnap\Result\Store {
         
+        $url = $this->getApiUrl().COINSNAP_SERVER_PATH.'/' . urlencode($storeId);
         $headers = $this->getRequestHeaders();
         $method = 'GET';
         $response = $this->getHttpClient()->request($method, $url, $headers);
@@ -23,15 +25,15 @@ class Store extends AbstractClient{
             }
         }
         else {
-            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), $response);
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
 
     /**
      * @return \Coinsnap\Result\Store[]
      */
-    public function getStores(): array
-    {
+    public function getStores(): array {
+        
         $url = $this->getApiUrl().COINSNAP_SERVER_PATH;
         $headers = $this->getRequestHeaders();
         $method = 'GET';
@@ -46,7 +48,8 @@ class Store extends AbstractClient{
             }
             return $r;
         } else {
-            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), $response);
+            
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
 }

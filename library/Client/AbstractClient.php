@@ -1,8 +1,10 @@
 <?php
-
 declare(strict_types=1);
-
 namespace Coinsnap\Client;
+
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 use Coinsnap\Exception\BadRequestException;
 use Coinsnap\Exception\ForbiddenException;
@@ -62,19 +64,15 @@ class AbstractClient{
         ];
     }
 
-    protected function getExceptionByStatusCode(string $method, string $url, Response $response): RequestException {
-        
-        $method = esc_html($method);
-        $url = esc_url($url);
-        //$response = esc_html($response);
+    protected function getExceptionByStatusCode(string $method, string $url, int $status, string $body): RequestException {
         
         $exceptions = [
             ForbiddenException::STATUS => ForbiddenException::class,
             BadRequestException::STATUS => BadRequestException::class,
         ];
 
-        $class = $exceptions[$response->getStatus()] ?? RequestException::class;
-        $e = new $class($method, $url, $response);
+        $class = $exceptions[$status] ?? RequestException::class;
+        $e = new $class($method, $url, $status, $body);
         return $e;
     }
 }

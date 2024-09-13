@@ -9,7 +9,7 @@
  * Text Domain:     coinsnap-for-easydigitaldownloads
  * Domain Path:     /languages
  * Requires PHP:    7.4
- * Tested up to:    6.6.1
+ * Tested up to:    6.6.2
  * Requires at least: 5.2
  * EDD tested up to: 3.3.3
  * License:         GPL2
