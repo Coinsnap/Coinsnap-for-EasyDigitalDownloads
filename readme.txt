@@ -3,7 +3,7 @@ Contributors: coinsnap
 Tags:  Coinsnap, Easy Digital Downloads, Bitcoin, Lightning 
 Requires at least: 6.2
 Requires PHP: 7.4
-Tested up to: 6.6.2
+Tested up to: 6.7
 Stable tag: 1.0.0
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -192,5 +192,5 @@ Plugin's page on Coinsnap website: https://coinsnap.io/en/
 11. QR code on the Bitcoin payment page
   
 == Changelog ==
-= 1.0 :: 2024-01-09 =
+= 1.0.0 :: 2024-01-09 =
 * Initial release. 
