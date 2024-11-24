@@ -9,9 +9,9 @@
  * Text Domain:     coinsnap-for-easydigitaldownloads
  * Domain Path:     /languages
  * Requires PHP:    7.4
- * Tested up to:    6.7
+ * Tested up to:    6.7.1
  * Requires at least: 5.2
- * EDD tested up to: 3.3.5.1
+ * EDD tested up to: 3.3.5.2
  * License:         GPL2
  * License URI:     https://www.gnu.org/licenses/gpl-2.0.html
  *
