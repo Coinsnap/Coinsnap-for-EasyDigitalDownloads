@@ -19,25 +19,28 @@
  */ 
 
 defined('ABSPATH') || exit;
-define( 'COINSNAP_REFERRAL_CODE', 'D18876' );
+if(!defined('COINSNAP_EDD_REFERRAL_CODE')){ define( 'COINSNAP_EDD_REFERRAL_CODE', 'D18876' ); }
+if(!defined('COINSNAP_EDD_PHP_VERSION')){ define( 'COINSNAP_EDD_PHP_VERSION', '7.4' ); }
+if(!defined('COINSNAP_EDD_WP_VERSION')){ define( 'COINSNAP_EDD_WP_VERSION', '5.2' ); }
 
 include_once(ABSPATH . 'wp-admin/includes/plugin.php' );    
 require_once(ABSPATH . "wp-content/plugins/easy-digital-downloads/easy-digital-downloads.php");
 require_once(ABSPATH . "wp-content/plugins/easy-digital-downloads/includes/payments/class-edd-payment.php");
-
 require_once(dirname(__FILE__) . "/library/loader.php");
 
 
-final class EDD_Coinsnap {
+final class CoinsnapEDD {
     private static $_instance;
     public $gateway_id      = 'coinsnap';    
     public const WEBHOOK_EVENTS = ['New','Expired','Settled','Processing'];	 
     
     public function __construct(){
+        /*
         if ( ! class_exists( 'Easy_Digital_Downloads' ) ) {
             add_action( 'admin_notices', array( self::$instance, 'coinsnap_admin_notices' ) );
             return;
-	}
+	}*/
+        $this->coinsnap_dependencies();
         
 	add_filter('edd_payment_gateways', array( $this, 'register_gateway' ), 1, 1);		
         
@@ -54,6 +57,50 @@ final class EDD_Coinsnap {
         add_action('init', array( $this, 'process_webhook'));
     }
     
+    
+    //  Checks if PHP version is too low or WooCommerce is not installed or CURL is not available and displays notice on admin dashboard
+    public function coinsnap_dependencies() {
+        // Checks PHP version.
+	if ( version_compare( PHP_VERSION, COINSNAP_EDD_PHP_VERSION, '<' ) ) {
+            
+            add_action( 'admin_notices', array( self::$instance, 'coinsnap_php_version_notice' ) );
+            return;
+	}
+
+	// Checks if EDD is installed.
+	if ( ! class_exists( 'Easy_Digital_Downloads' ) ) {
+            add_action( 'admin_notices', array( self::$instance, 'coinsnap_edd_notice' ) );
+            return;
+	}
+
+	// Checks WP version.
+	if ( version_compare( get_bloginfo( 'version' ), COINSNAP_EDD_WP_VERSION, '<') ) {
+            add_action( 'admin_notices', array( self::$instance, 'coinsnap_wp_version_notice' ) );
+            return;
+	}
+    }
+    
+    public function coinsnap_php_version_notice() {
+        $eddMessage = __( 'Easy Digital Downloads Payment Gateway by Coinsnap add-on requires <a href="https://easydigitaldownloads.com" target="_new"> Easy Digital Downloads</a> plugin. Please install and activate it.', 'coinsnap-for-easydigitaldownloads' );
+        add_settings_error( 'edd-notices', 'edd-coinsnap-php-version-notice', $eddMessage, 'error' );
+        settings_errors( 'edd-notices' );
+    }
+    
+    public function coinsnap_edd_notice() {
+        $PHPVersionMessage = sprintf( 
+            /* translators: 1: PHP version */
+            __( 'Your PHP version is %1$s but Coinsnap Payment plugin requires version 7.4+.', 'coinsnap-for-easydigitaldownloads' ), PHP_VERSION );
+        add_settings_error( 'edd-notices', 'edd-coinsnap-edd-notice', $PHPVersionMessage, 'error' );
+        settings_errors( 'edd-notices' );
+    }
+    
+    public function coinsnap_wp_version_notice() {
+        $wpMessage = sprintf( 
+            /* translators: 1: Current WP version, 2: Required WP version  */
+            __( 'Your Wordpress version is %1$s but Coinsnap Payment add-on requires version %2$s', 'coinsnap-for-easydigitaldownloads' ), get_bloginfo( 'version' ), COINSNAP_EDD_WP_VERSION );
+        add_settings_error( 'edd-notices', 'edd-coinsnap-wp-version-notice', $wpMessage, 'error' );
+        settings_errors( 'edd-notices' );
+    }
     
     public function coinsnap_notice(){
         
@@ -129,8 +176,8 @@ final class EDD_Coinsnap {
 
     public static function getInstance()
     {
-        if (! isset(self::$_instance) && ! (self::$_instance instanceof EDD_Coinsnap)) {
-            self::$_instance = new EDD_Coinsnap;
+        if (! isset(self::$_instance) && ! (self::$_instance instanceof CoinsnapEDD)) {
+            self::$_instance = new CoinsnapEDD;
         }
 
         return self::$_instance;
@@ -294,7 +341,7 @@ final class EDD_Coinsnap {
 			    $buyerEmail,
 			    $buyerName, 
 			    $redirectUrl,
-			    COINSNAP_REFERRAL_CODE,     
+			    COINSNAP_EDD_REFERRAL_CODE,     
 			    $metadata,
 			    $checkoutOptions
 		    );
@@ -429,8 +476,8 @@ final class EDD_Coinsnap {
 
 
 
-function EDD_coinsnap()
+function CoinsnapEDD()
 {
-    return EDD_Coinsnap::getInstance();
+    return CoinsnapEDD::getInstance();
 }
-EDD_coinsnap();
+CoinsnapEDD();
