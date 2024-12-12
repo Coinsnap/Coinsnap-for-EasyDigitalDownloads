@@ -5,13 +5,13 @@
 
 === Coinsnap for Easy Digital Downloads 1.0.0 ===
 
-Contributors: coinsnap
-Tags: Lightning, Lightning Payment, SATS, Satoshi sats, bitcoin, Wordpress, Easy Digital Downloads, payment gateway, accept bitcoin, bitcoin plugin, bitcoin payment processor, bitcoin e-commerce, Lightning Network, cryptocurrency, lightning payment processor
-Tested up to: 6.7.1
-Requires PHP: 7.4
-Stable tag: 1.0.0
-License: MIT
-License URI: https://github.com/Coinsnap/coinsnap-woocommerce/blob/master/license.txt
+* Contributors: coinsnap
+* Tags: Lightning, Lightning Payment, SATS, Satoshi sats, bitcoin, Wordpress, Easy Digital Downloads, payment gateway, accept bitcoin, bitcoin plugin, bitcoin payment processor, bitcoin e-commerce, Lightning Network, cryptocurrency, lightning payment processor
+* Tested up to: 6.7.1
+* Requires PHP: 7.4
+* Stable tag: 1.0.0
+* License:         GPL2
+* License URI:     https://www.gnu.org/licenses/gpl-2.0.html
 
 Bitcoin and Lightning payment processing with the Coinsnap add-on for Easy Digital Downloads Wordpress Plug-in.
 
