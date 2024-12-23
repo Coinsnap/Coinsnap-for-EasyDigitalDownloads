@@ -1,5 +1,5 @@
 # Coinsnap for Easy Digital Downloads WordPress plugin #
-![Coinsnap for Easy Digital Downloads](https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads/blob/main/assets/images/1.png)
+![Coinsnap for Easy Digital Downloads](https://resources.coinsnap.org/products/easydigitaldownloads/images/1.png)
 
 ## Accept Bitcoin and Lightning Payments with Easy Digital Downloads ##
 
@@ -30,7 +30,7 @@ Coinsnap’s payment plugin for Easy Digital Downloads makes it very simple for 
 
 # Bitcoin and Lightning payments in Easy Digital Downloads #
 
-![Easy Digital Downloads Plugin for Wordpress](https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads/blob/main/assets/images/2.png)
+![Easy Digital Downloads Plugin for Wordpress](https://resources.coinsnap.org/products/easydigitaldownloads/images/2.png)
 
 Easy Digital Downloads is a platform for selling digital products that does not impose any additional bandwidth charges on file downloads. Easy Digital Downloads allows you to sell digital products with ease and manage your online store efficiently. With a user-friendly interface and a variety of customization options, Easy Digital Downloads is an excellent choice for anyone looking to sell digital goods online.
 
@@ -106,19 +106,19 @@ After successful installation, click Activate and then you can start setting up 
 
 ### 1.1. Add plugin ###
 
-![Plugin downloading from Github repository](https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads/blob/main/assets/images/3.jpg)
+![Plugin downloading from Github repository](https://resources.coinsnap.org/products/easydigitaldownloads/images/3.jpg)
 
 If you don’t want to install add-on directly via plugin, you can download Coinsnap Easy Digital Downloads plug-in from Coinsnap Github page or from WordPress directory and install it via “Upload Plugin” function:
 
 Navigate to Plugins > Add Plugins > Upload Plugin and Select zip-archive downloaded from Github.
 
-![Manual plugin installation](https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads/blob/main/assets/images/4.png)
+![Manual plugin installation](https://resources.coinsnap.org/products/easydigitaldownloads/images/4.png)
 
 Click “Install now” and Coinsnap Easy Digital Downloads plug-in will be installed in WordPress.
 
 After you have successfully installed the plugin, you can proceed with the connection to Coinsnap payment gateway.
 
-![Plugins list](https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads/blob/main/assets/images/6.png)
+![Plugins list](https://resources.coinsnap.org/products/easydigitaldownloads/images/6.png)
 
 ### 1.2. Configure Coinsnap Easy Digital Downloads plug-in ###
 
@@ -126,14 +126,14 @@ After the Coinsnap Easy Digital Downloads plug-in is installed and activated, a 
 
 ### 1.3. Deposit Coinsnap data ###
 
-![Payment gateways](https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads/blob/main/assets/images/5.png)
+![Payment gateways](https://resources.coinsnap.org/products/easydigitaldownloads/images/5.png)
 
 * Navigate to Downloads > Settings > Payments
 * Select coinsnap in Active Gateways and click Save
 * Navigate to Downloads > Settings > Payments > Coinsnap and enter Store ID and API Key
 * Click Save Setting
 
-![Coinsnap payment settings](https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads/blob/main/assets/images/7.png)
+![Coinsnap payment settings](https://resources.coinsnap.org/products/easydigitaldownloads/images/7.png)
 
 If you don’t have a Coinsnap account yet, you can do so via the link shown: Coinsnap Registration
 
@@ -141,7 +141,7 @@ If you don’t have a Coinsnap account yet, you can do so via the link shown: Co
 
 ### 2.1. Create a Coinsnap Account ####
 
-![Coinsnap register](https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads/blob/main/assets/images/8.png)
+![Coinsnap register](https://resources.coinsnap.org/products/easydigitaldownloads/images/8.png)
 
 Now go to the Coinsnap website at: https://app.coinsnap.io/register and open an account by entering your email address and a password of your choice.
 
@@ -149,7 +149,7 @@ If you are using a Lightning Wallet with Lightning Login, then you can also open
 
 ### 2.2. Confirm email address ####
 
-![E-mail address confirmation](https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads/blob/main/assets/images/9.png)
+![E-mail address confirmation](https://resources.coinsnap.org/products/easydigitaldownloads/images/9.png)
 
 You will receive an email to the given email address with a confirmation link, which you have to confirm. If you do not find the email, please check your spam folder.
 
@@ -165,7 +165,7 @@ In the Lightning Address field, enter the Lightning address to which the Bitcoin
 
 A Lightning address is similar to an e-mail address. Lightning payments are forwarded to this Lightning address and paid out. If you don’t have a Lightning address yet, set up a Lightning wallet that will provide you with a Lightning address.
 
-![Connect website with Coinsnap](https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads/blob/main/assets/images/10.png)
+![Connect website with Coinsnap](https://resources.coinsnap.org/products/easydigitaldownloads/images/10.png)
 
 For more information on Lightning addresses and the corresponding Lightning wallet providers, click here:
 https://coinsnap.io/lightning-wallet-mit-lightning-adresse/
@@ -191,4 +191,4 @@ We make a real donation payment in our test Easy Digital Downloads site.
 
 The Bitcoin + Lightning payment page is now displayed, offering the payer the option to pay with Bitcoin or also with Lightning. Both methods are integrated in the displayed QR code.
 
-![QR code on the Bitcoin payment page](https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads/blob/main/assets/images/11.png)
+![QR code on the Bitcoin payment page](https://resources.coinsnap.org/products/easydigitaldownloads/images/11.png)
