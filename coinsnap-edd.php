@@ -116,13 +116,13 @@ final class CoinsnapEDD {
                 
                 if(!isset($coinsnap_store_id) || empty($coinsnap_store_id)){
                     echo '<div class="notice notice-error"><p>';
-                    esc_html_e('Coinsnap Store ID is not set', 'coinsnap-for-easydigitaldownloads');
+                    esc_html_e('EasyDigitalDownloads: Coinsnap Store ID is not set', 'coinsnap-for-easydigitaldownloads');
                     echo '</p></div>';
                 }
 
                 if(!isset($coinsnap_api_key) || empty($coinsnap_api_key)){
                     echo '<div class="notice notice-error"><p>';
-                    esc_html_e('Coinsnap API Key is not set', 'coinsnap-for-easydigitaldownloads');
+                    esc_html_e('EasyDigitalDownloads: Coinsnap API Key is not set', 'coinsnap-for-easydigitaldownloads');
                     echo '</p></div>';
                 }
                 
@@ -131,30 +131,30 @@ final class CoinsnapEDD {
                     $store = $client->getStore($coinsnap_store_id);
                     if ($store['code'] === 200) {
                         echo '<div class="notice notice-success"><p>';
-                        esc_html_e('Established connection to Coinsnap Server', 'coinsnap-for-easydigitaldownloads');
+                        esc_html_e('EasyDigitalDownloads: Established connection to Coinsnap Server', 'coinsnap-for-easydigitaldownloads');
                         echo '</p></div>';
                         
                         if ( ! $this->webhookExists( $coinsnap_store_id, $coinsnap_api_key, $coinsnap_webhook_url ) ) {
                             if ( ! $this->registerWebhook( $coinsnap_store_id, $coinsnap_api_key, $coinsnap_webhook_url ) ) {
                                 echo '<div class="notice notice-error"><p>';
-                                esc_html_e('Unable to create webhook on Coinsnap Server', 'coinsnap-for-easydigitaldownloads');
+                                esc_html_e('EasyDigitalDownloads: Unable to create webhook on Coinsnap Server', 'coinsnap-for-easydigitaldownloads');
                                 echo '</p></div>';
                             }
                             else {
                                 echo '<div class="notice notice-success"><p>';
-                                esc_html_e('Successfully registered a new webhook on Coinsnap Server', 'coinsnap-for-easydigitaldownloads');
+                                esc_html_e('EasyDigitalDownloads: Successfully registered a new webhook on Coinsnap Server', 'coinsnap-for-easydigitaldownloads');
                                 echo '</p></div>';
                             }
                         }
                         else {
                             echo '<div class="notice notice-info"><p>';
-                            esc_html_e('Webhook already exists, skipping webhook creation', 'coinsnap-for-easydigitaldownloads');
+                            esc_html_e('EasyDigitalDownloads: Webhook already exists, skipping webhook creation', 'coinsnap-for-easydigitaldownloads');
                             echo '</p></div>';
                         }
                     }
                     else {
                         echo '<div class="notice notice-error"><p>';
-                        esc_html_e('Coinsnap connection error:', 'coinsnap-for-easydigitaldownloads');
+                        esc_html_e('EasyDigitalDownloads: Coinsnap connection error:', 'coinsnap-for-easydigitaldownloads');
                         echo esc_html($store['result']['message']);
                         echo '</p></div>';
                     }
