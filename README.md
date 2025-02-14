@@ -15,10 +15,10 @@
 
 Bitcoin and Lightning payment processing with the Coinsnap add-on for Easy Digital Downloads Wordpress Plug-in.
 
-* Coinsnap for Easy Digital Downloads Demo Page: https://easydigitaldownloads.coinsnap.org/
-* Blog Article: https://coinsnap.io/en/coinsnap-for-easy-digital-downloads-payment-plugin/
-* WordPress: https://wordpress.org/plugins/coinsnap-for-easy-digital-downloads/
-* GitHub: https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads
+* Coinsnap for Easy Digital Downloads Demo Page: [https://easydigitaldownloads.coinsnap.org/](https://easydigitaldownloads.coinsnap.org/)
+* Blog Article: [https://coinsnap.io/coinsnap-for-easy-digital-downloads-payment-plugin/](https://coinsnap.io/coinsnap-for-easy-digital-downloads-payment-plugin/)
+* WordPress: [https://wordpress.org/plugins/coinsnap-for-easy-digital-downloads/](https://wordpress.org/plugins/coinsnap-for-easy-digital-downloads/)
+* GitHub: [https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads](https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads)
 
 # Description #
 
