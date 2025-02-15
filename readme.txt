@@ -1,4 +1,4 @@
-=== Coinsnap for Easy Digital Downloads ===
+=== Bitcoin payment for Easy Digital Download ===
 Contributors: coinsnap
 Tags:  Coinsnap, Easy Digital Downloads, Bitcoin, Lightning 
 Requires at least: 6.2
@@ -8,7 +8,7 @@ Stable tag: 1.0.0
 License:         GPL2
 License URI:     https://www.gnu.org/licenses/gpl-2.0.html
 
-Bitcoin and Lightning payment processing with the Coinsnap add-on for Easy Digital Downloads Wordpress Plug-in.
+With this Bitcoin payment plugin for Easy Digital Downloads you can now offer downloads for Bitcoin right in the Easy Digital Downloads plugin!
 
 == Description ==
 
