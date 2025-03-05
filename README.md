@@ -1,4 +1,4 @@
-# Bitcoin payment for Easy Digital Download #
+# Bitcoin payment for Easy Digital Downloads #
 ![Coinsnap for Easy Digital Downloads](https://resources.coinsnap.org/products/easydigitaldownloads/images/1.png)
 
 ## Accept Bitcoin and Lightning Payments with Easy Digital Downloads ##

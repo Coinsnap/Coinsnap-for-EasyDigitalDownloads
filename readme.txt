@@ -1,4 +1,4 @@
-=== Bitcoin payment for Easy Digital Download ===
+=== Bitcoin payment for Easy Digital Downloads ===
 Contributors: coinsnap
 Tags:  Coinsnap, Easy Digital Downloads, Bitcoin, Lightning 
 Requires at least: 6.2
