@@ -12,7 +12,7 @@
  * Tested up to:    6.7
  * Requires at least: 5.2
  * Requires Plugins: easy-digital-downloads
- * EDD tested up to: 3.3.6.1
+ * EDD tested up to: 3.3.7
  * License:         GPL2
  * License URI:     https://www.gnu.org/licenses/gpl-2.0.html
  *
