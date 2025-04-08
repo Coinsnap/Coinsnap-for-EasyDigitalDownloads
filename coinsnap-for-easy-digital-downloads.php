@@ -20,9 +20,10 @@
  */ 
 
 defined('ABSPATH') || exit;
-if(!defined('COINSNAP_EDD_REFERRAL_CODE')){ define( 'COINSNAP_EDD_REFERRAL_CODE', 'D18876' ); }
-if(!defined('COINSNAP_EDD_PHP_VERSION')){ define( 'COINSNAP_EDD_PHP_VERSION', '7.4' ); }
-if(!defined('COINSNAP_EDD_WP_VERSION')){ define( 'COINSNAP_EDD_WP_VERSION', '5.2' ); }
+if(!defined('COINSNAPEDD_REFERRAL_CODE')){ define( 'COINSNAPEDD_REFERRAL_CODE', 'D18876' ); }
+if(!defined('COINSNAPEDD_PHP_VERSION')){ define( 'COINSNAPEDD_PHP_VERSION', '7.4' ); }
+if(!defined('COINSNAPEDD_WP_VERSION')){ define( 'COINSNAPEDD_WP_VERSION', '5.2' ); }
+if(!defined('COINSNAP_CURRENCIES')){define( 'COINSNAP_CURRENCIES', array("EUR","USD","SATS","BTC","CAD","JPY","GBP","CHF","RUB") );}
 
 include_once(ABSPATH . 'wp-admin/includes/plugin.php' );    
 require_once(ABSPATH . "wp-content/plugins/easy-digital-downloads/easy-digital-downloads.php");
@@ -36,11 +37,7 @@ final class CoinsnapEDD {
     public const WEBHOOK_EVENTS = ['New','Expired','Settled','Processing'];	 
     
     public function __construct(){
-        /*
-        if ( ! class_exists( 'Easy_Digital_Downloads' ) ) {
-            add_action( 'admin_notices', array( self::$instance, 'coinsnap_admin_notices' ) );
-            return;
-	}*/
+        
         $this->coinsnap_dependencies();
         
 	add_filter('edd_payment_gateways', array( $this, 'register_gateway' ), 1, 1);		
@@ -62,7 +59,7 @@ final class CoinsnapEDD {
     //  Checks if PHP version is too low or WooCommerce is not installed or CURL is not available and displays notice on admin dashboard
     public function coinsnap_dependencies() {
         // Checks PHP version.
-	if ( version_compare( PHP_VERSION, COINSNAP_EDD_PHP_VERSION, '<' ) ) {
+	if ( version_compare( PHP_VERSION, COINSNAPEDD_PHP_VERSION, '<' ) ) {
             
             add_action( 'admin_notices', array( self::$instance, 'coinsnap_php_version_notice' ) );
             return;
@@ -75,10 +72,15 @@ final class CoinsnapEDD {
 	}
 
 	// Checks WP version.
-	if ( version_compare( get_bloginfo( 'version' ), COINSNAP_EDD_WP_VERSION, '<') ) {
+	if ( version_compare( get_bloginfo( 'version' ), COINSNAPEDD_WP_VERSION, '<') ) {
             add_action( 'admin_notices', array( self::$instance, 'coinsnap_wp_version_notice' ) );
             return;
 	}
+    }
+    
+        public function coinsnap_admin_notices() {
+		add_settings_error( 'edd-notices', 'edd-coinsnap-admin-error', ( ! is_plugin_active( 'easy-digital-downloads/easy-digital-downloads.php' ) ? __( '<b>Easy Digital Downloads Payment Gateway by Coinsnap</b>add-on requires <a href="https://easydigitaldownloads.com" target="_new"> Easy Digital Downloads</a> plugin. Please install and activate it.', 'coinsnap-for-easy-digital-downloads' ) : ( ! extension_loaded( 'curl' ) ? ( __( '<b>Easy Digital Downloads Payment Gateway by Coinsnap</b>requires PHP CURL. You need to activate the CURL function on your server. Please contact your hosting provider.', 'coinsnap-for-easy-digital-downloads' ) ) : '' ) ), 'error' );
+		settings_errors( 'edd-notices' );
     }
     
     public function coinsnap_php_version_notice() {
@@ -98,7 +100,7 @@ final class CoinsnapEDD {
     public function coinsnap_wp_version_notice() {
         $wpMessage = sprintf( 
             /* translators: 1: Current WP version, 2: Required WP version  */
-            __( 'Your Wordpress version is %1$s but Coinsnap Payment add-on requires version %2$s', 'coinsnap-for-easy-digital-downloads' ), get_bloginfo( 'version' ), COINSNAP_EDD_WP_VERSION );
+            __( 'Your Wordpress version is %1$s but Coinsnap Payment add-on requires version %2$s', 'coinsnap-for-easy-digital-downloads' ), get_bloginfo( 'version' ), COINSNAPEDD_WP_VERSION );
         add_settings_error( 'edd-notices', 'edd-coinsnap-wp-version-notice', $wpMessage, 'error' );
         settings_errors( 'edd-notices' );
     }
@@ -162,7 +164,6 @@ final class CoinsnapEDD {
                 }
         }
     }
-    
    
     public function edd_gateway_settings_url(){
         $gateway_settings_url = edd_get_admin_url(
@@ -175,19 +176,15 @@ final class CoinsnapEDD {
         return $gateway_settings_url;
     }
 
-    public static function getInstance()
-    {
+    public static function getInstance(){
         if (! isset(self::$_instance) && ! (self::$_instance instanceof CoinsnapEDD)) {
             self::$_instance = new CoinsnapEDD;
         }
 
         return self::$_instance;
     }
-
-    
    
-    public function register_gateway($gateways)
-    {
+    public function register_gateway($gateways){
         $gateways[$this->gateway_id] = array(
                 'admin_label'    => __('Coinsnap', 'coinsnap-for-easy-digital-downloads'),
                 'checkout_label' => __('Bitcoin + Lightning', 'coinsnap-for-easy-digital-downloads'),
@@ -198,19 +195,15 @@ final class CoinsnapEDD {
     }
 
     
-    public function registerPaymenticon($payment_icons)
-    {
+    public function registerPaymenticon($payment_icons){
         $payment_icons['coinsnap'] = 'Coinsnap';
-		return $payment_icons;
+	return $payment_icons;
     }
-
     
-    
-    public function settings_sections_gateways($gateway_sections)
-    {
-		if (edd_is_gateway_active($this->gateway_id)) {
-			$gateway_sections['coinsnap'] = __('Coinsnap', 'coinsnap-for-easy-digital-downloads');
-		}
+    public function settings_sections_gateways($gateway_sections){
+        if (edd_is_gateway_active($this->gateway_id)) {
+            $gateway_sections['coinsnap'] = __('Coinsnap', 'coinsnap-for-easy-digital-downloads');
+	}
         return $gateway_sections;
     }
 
@@ -237,6 +230,13 @@ final class CoinsnapEDD {
                 'desc' => __('Enter API Key Given by Coinsnap', 'coinsnap-for-easy-digital-downloads'),
                 'type' => 'text',
                 'size' => 'regular',
+            ),
+            'coinsnap_autoredirect' => array(
+                'id'   => 'coinsnap_autoredirect',
+                'name' => __('Redirect after payment', 'coinsnap-for-easy-digital-downloads'),
+                'desc' => __('Redirect after payment on Thank you page automatically', 'coinsnap-for-easy-digital-downloads'),
+                'type' => 'checkbox',
+                'value' => 1
             ),
             'expired_status' => array(
                 'id'   => 'expired_status',
@@ -265,101 +265,125 @@ final class CoinsnapEDD {
             
         );
 
-        $default_coinsnap_settings    = apply_filters('edd_default_coinsnap_settings', $default_coinsnap_settings);
-        $gateway_settings['coinsnap'] = $default_coinsnap_settings;
-
+        $gateway_settings['coinsnap'] = apply_filters('edd_default_coinsnap_settings', $default_coinsnap_settings);
         return $gateway_settings;
     }
     
     
-    public function coinsnap_payment($purchase_data)
-    {
+    public function coinsnap_payment($purchase_data){
         global $edd_options;
+        
         if (! wp_verify_nonce($purchase_data['gateway_nonce'], 'edd-gateway')) {
-            wp_die(esc_html__('Nonce verification has failed', 'coinsnap-for-easy-digital-downloads'), esc_html__('Error', 'coinsnap-for-easy-digital-downloads'), array( 'response' => 403 ));
+            wp_die(
+                esc_html__('Nonce verification has failed', 'coinsnap-for-easy-digital-downloads'),
+                esc_html__('Error', 'coinsnap-for-easy-digital-downloads'),
+                array( 'response' => 403 )
+            );
         }        
         
         $webhook_url = $this->get_webhook_url();
         
         if (! $this->webhookExists($this->getStoreId(), $this->getApiKey(), $webhook_url)){
-            if (! $this->registerWebhook($this->getStoreId(), $this->getApiKey(),$webhook_url)) {
-             echo "unable to set Webhook url";
-             exit;
+            if (! $this->registerWebhook($this->getStoreId(), $this->getApiKey(),$webhook_url)){
+                
+                edd_record_gateway_error(
+                    esc_html__('Connection Error', 'coinsnap-for-easy-digital-downloads'), 
+                    esc_html__('Unable to set Webhook url', 'coinsnap-for-easy-digital-downloads'),
+                    $payment_id);
+                edd_set_error(esc_html__('Connection Error', 'coinsnap-for-easy-digital-downloads'), esc_html__('Unable to set Webhook url', 'coinsnap-for-easy-digital-downloads'));    
+                edd_send_back_to_checkout('?payment-mode=' . $purchase_data['post_data']['edd-gateway']);
             }
-
         }
         
         $payment_data = array(
-        'price'         => $purchase_data['price'],
-        'date'          => $purchase_data['date'],
-        'user_email'    => $purchase_data['user_email'],
-        'purchase_key'  => $purchase_data['purchase_key'],
-        'currency'      => edd_get_currency(),
-        'downloads'     => $purchase_data['downloads'],
-        'user_info'     => $purchase_data['user_info'],
-        'cart_details'  => $purchase_data['cart_details'],
-        'gateway'       => 'coinsnap',
-        'status'        => ! empty($purchase_data['buy_now']) ? 'private' : 'pending'
+            'price'         => $purchase_data['price'],
+            'date'          => $purchase_data['date'],
+            'user_email'    => $purchase_data['user_email'],
+            'purchase_key'  => $purchase_data['purchase_key'],
+            'currency'      => edd_get_currency(),
+            'downloads'     => $purchase_data['downloads'],
+            'user_info'     => $purchase_data['user_info'],
+            'cart_details'  => $purchase_data['cart_details'],
+            'gateway'       => 'coinsnap',
+            'status'        => ! empty($purchase_data['buy_now']) ? 'private' : 'pending'
         );
 
         $payment_id = edd_insert_payment($payment_data);
-      
-
         
-        if (! $payment_id) {                    
-            edd_record_gateway_error(
-                esc_html__('Payment Error', 'coinsnap-for-easy-digital-downloads'), 
-                sprintf(
-                    /* translators: 1: Payment data */
-                    esc_html__('Payment creation failed before sending buyer to Coinsnap. Payment data: %1$s', 'coinsnap-for-easy-digital-downloads'), wp_json_encode($payment_data)),
-                $payment_id);
-            
+        if (! $payment_id) {
+            $errorMessage = sprintf(
+                /* translators: 1: Payment data */
+                esc_html__('Payment creation failed before sending buyer to Coinsnap. Payment data: %1$s', 'coinsnap-for-easy-digital-downloads'), wp_json_encode($payment_data));
+            edd_record_gateway_error(esc_html__('Payment Error', 'coinsnap-for-easy-digital-downloads'), $errorMessage, $payment_id);
+            edd_set_error(esc_html__('Payment Error', 'coinsnap-for-easy-digital-downloads'), $errorMessage);    
             edd_send_back_to_checkout('?payment-mode=' . $purchase_data['post_data']['edd-gateway']);
         }
         
         else {            
-            $amount =  $purchase_data['price'];
-		    $redirectUrl = edd_get_success_page_uri();
+            $amount = round($purchase_data['price'], 2);
+            $currency_code = edd_get_currency();
             
-		    $amount = round($purchase_data['price'], 2);            
-		    $buyerEmail = isset($purchase_data['user_email']) ? $purchase_data['user_email'] : $purchase_data['user_info']['email'];
-		    $buyerName =  $purchase_data['user_info']['first_name'] . ' ' . $purchase_data['user_info']['last_name'];
-		    $currency_code = edd_get_currency();		
-
-	        $metadata = [];
+            $client =new \Coinsnap\Client\Invoice($this->getApiUrl(), $this->getApiKey());
+            $checkInvoice = $client->checkPaymentData($amount,strtoupper($currency_code));
+                
+            if($checkInvoice['result'] === true){
+            
+		$redirectUrl = edd_get_success_page_uri();
+                $buyerEmail = isset($purchase_data['user_email']) ? $purchase_data['user_email'] : $purchase_data['user_info']['email'];
+		$buyerName =  $purchase_data['user_info']['first_name'] . ' ' . $purchase_data['user_info']['last_name'];
+		    		
+                $metadata = [];
     		$metadata['orderNumber'] = $payment_id;
-		    $metadata['customerName'] = $buyerName;
-
-		    $checkoutOptions = new \Coinsnap\Client\InvoiceCheckoutOptions();
-		    $checkoutOptions->setRedirectURL( $redirectUrl );
-		    $client =new \Coinsnap\Client\Invoice($this->getApiUrl(), $this->getApiKey());
-		    $camount = \Coinsnap\Util\PreciseNumber::parseFloat($amount,2);
-		    $invoice = $client->createInvoice(
-			    $this->getStoreId(),  
-			    $currency_code,
-			    $camount,
-			    $payment_id,
-			    $buyerEmail,
-			    $buyerName, 
-			    $redirectUrl,
-			    COINSNAP_EDD_REFERRAL_CODE,     
-			    $metadata,
-			    $checkoutOptions
-		    );
+                $metadata['customerName'] = $buyerName;
+                $redirectAutomatically = (edd_get_option( 'coinsnap_autoredirect', '' ) > 0)? true : false;
+                $walletMessage = '';
+		$camount = \Coinsnap\Util\PreciseNumber::parseFloat($amount,2);
+		
+                $invoice = $client->createInvoice(
+                    $this->getStoreId(),  
+                    $currency_code,
+                    $camount,
+                    $payment_id,
+                    $buyerEmail,
+                    $buyerName, 
+                    $redirectUrl,
+                    COINSNAPEDD_REFERRAL_CODE,     
+                    $metadata,
+                    $redirectAutomatically,
+                    $walletMessage
+		);
 		
     		$payurl = $invoice->getData()['checkoutLink'] ;	
 
-           if ($payurl) {	                                
-                wp_redirect($payurl);
-                exit;
-            } else {
+                if($payurl) {	                                
+                     wp_redirect($payurl);
+                     exit;
+                }
                 
-                edd_record_gateway_error(
-                    esc_html__('Payment Error', 'coinsnap-for-easy-digital-downloads'), 
-                    sprintf(
+                else {
+                    $errorMessage = sprintf(
                         /* translators: 1: Payment data */    
-                        esc_html__('Payment creation failed before sending buyer to Coinsnap. Payment data: %1$s', 'coinsnap-for-easy-digital-downloads'), wp_json_encode($payment_data)), $payment_id);
+                        esc_html__('Payment creation failed before sending buyer to Coinsnap. Payment data: %1$s', 'coinsnap-for-easy-digital-downloads'), wp_json_encode($payment_data));
+                    edd_record_gateway_error(esc_html__('Payment Error', 'coinsnap-for-easy-digital-downloads'), $errorMessage, $payment_id);
+                    edd_set_error(esc_html__('Payment Error', 'coinsnap-for-easy-digital-downloads'), $errorMessage);    
+                    edd_send_back_to_checkout('?payment-mode=' . $purchase_data['post_data']['edd-gateway']);
+                }
+            }
+            else {
                 
+                if($checkInvoice['error'] === 'currencyError'){
+                    $errorMessage = sprintf( 
+                    /* translators: 1: Currency */
+                    __( 'Currency %1$s is not supported by Coinsnap', 'coinsnap-for-easy-digital-downloads' ), strtoupper( $currency_code ));
+                }      
+                elseif($checkInvoice['error'] === 'amountError'){
+                    $errorMessage = sprintf( 
+                    /* translators: 1: Amount, 2: Currency */
+                    __( 'Invoice amount cannot be less than %1$s %2$s', 'coinsnap-for-easy-digital-downloads' ), $checkInvoice['min_value'], strtoupper( $currency_code ));
+                }
+                
+                edd_record_gateway_error(esc_html__('Payment Error', 'coinsnap-for-easy-digital-downloads'), $errorMessage, $payment_id);
+                edd_set_error(esc_html__('Payment Error', 'coinsnap-for-easy-digital-downloads'), $errorMessage);
                 edd_send_back_to_checkout('?payment-mode=' . $purchase_data['post_data']['edd-gateway']);
             }
         }
@@ -402,10 +426,7 @@ final class CoinsnapEDD {
     
     
 	
-    public function coinsnap_admin_notices() {
-		add_settings_error( 'edd-notices', 'edd-coinsnap-admin-error', ( ! is_plugin_active( 'easy-digital-downloads/easy-digital-downloads.php' ) ? __( '<b>Easy Digital Downloads Payment Gateway by Coinsnap</b>add-on requires <a href="https://easydigitaldownloads.com" target="_new"> Easy Digital Downloads</a> plugin. Please install and activate it.', 'coinsnap-for-easy-digital-downloads' ) : ( ! extension_loaded( 'curl' ) ? ( __( '<b>Easy Digital Downloads Payment Gateway by Coinsnap</b>requires PHP CURL. You need to activate the CURL function on your server. Please contact your hosting provider.', 'coinsnap-for-easy-digital-downloads' ) ) : '' ) ), 'error' );
-		settings_errors( 'edd-notices' );
-    }
+
 
     private function get_webhook_url() {
 		return esc_url_raw( add_query_arg( array( 'edd-listener' => 'coinsnap' ), home_url( 'index.php' ) ) );
@@ -436,6 +457,7 @@ final class CoinsnapEDD {
 	
 		return false;
 	}
+        
 	public function registerWebhook(string $storeId, string $apiKey, string $webhook): bool {	
 		try {			
 			$whClient = new \Coinsnap\Client\Webhook($this->getApiUrl(), $apiKey);
@@ -455,30 +477,24 @@ final class CoinsnapEDD {
 		return false;
 	}
 
-	public function deleteWebhook(string $storeId, string $apiKey, string $webhookid): bool {	    
+    public function deleteWebhook(string $storeId, string $apiKey, string $webhookid): bool {	    
 		
-		try {			
-			$whClient = new \Coinsnap\Client\Webhook($this->getApiUrl(), $apiKey);
+        try {			
+            $whClient = new \Coinsnap\Client\Webhook($this->getApiUrl(), $apiKey);
 			
-			$webhook = $whClient->deleteWebhook(
-				$storeId,   //$storeId
-				$webhookid, //$url			
-			);					
-			return true;
-		} catch (\Throwable $e) {
-			
-			return false;	
-		}
+            $webhook = $whClient->deleteWebhook(
+                $storeId,   //$storeId
+                $webhookid, //$url			
+            );					
+            return true;
+	}
+        catch (\Throwable $e) {
+            return false;	
+        }
     }
-
-              
-    
 }
 
-
-
-function CoinsnapEDD()
-{
+function CoinsnapEDD(){
     return CoinsnapEDD::getInstance();
 }
 CoinsnapEDD();
