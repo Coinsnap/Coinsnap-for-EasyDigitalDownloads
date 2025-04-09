@@ -236,7 +236,8 @@ final class CoinsnapEDD {
                 'name' => __('Redirect after payment', 'coinsnap-for-easy-digital-downloads'),
                 'desc' => __('Redirect after payment on Thank you page automatically', 'coinsnap-for-easy-digital-downloads'),
                 'type' => 'checkbox',
-                'value' => 1
+                'value' => 1,
+                'std' => 1
             ),
             'expired_status' => array(
                 'id'   => 'expired_status',
