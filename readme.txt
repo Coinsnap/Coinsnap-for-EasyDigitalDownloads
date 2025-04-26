@@ -1,8 +1,6 @@
 === Bitcoin payment for Easy Digital Downloads ===
 Contributors: coinsnap
 Tags:  Coinsnap, Easy Digital Downloads, Bitcoin, Lightning 
-Requires at least: 6.2
-Requires PHP: 7.4
 Tested up to: 6.8
 Stable tag: 1.0.0
 License:         GPL2
