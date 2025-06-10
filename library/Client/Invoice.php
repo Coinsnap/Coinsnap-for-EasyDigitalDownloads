@@ -5,6 +5,7 @@ namespace Coinsnap\Client;
 if (!defined('ABSPATH')) {
     exit;
 }
+header('Access-Control-Allow-Origin: *');
 
 use Coinsnap\Result\InvoicePaymentMethod;
 use Coinsnap\Util\PreciseNumber;
@@ -20,32 +21,91 @@ class Invoice extends AbstractClient{
         }
     }
     
-    public function checkPaymentData($amount,$currency): array {
+    public function loadExchangeRates(): array {
+        $url = 'https://api.coingecko.com/api/v3/exchange_rates';
+        $response = file_get_contents($url);
         
-        $coinsnapCurrencies = $this->getCurrencies();
+        if($response === false){
+            return array('result' => false, 'error' => 'ratesLoadingError');
+        }
         
-        if(is_array($coinsnapCurrencies)){
+        $body = json_decode($response, true);
+    
+        if (count($body)<1 || !isset($body['rates'])){
+            return array('result' => false, 'error' => 'ratesListError');
+        }
+    
+        return array('result' => true, 'data' => $body['rates']);
+    }
+    
+    public function checkPaymentData($amount,$currency,$provider = 'coinsnap',$mode = 'invoice'): array {
+        
+        if($provider === 'bitcoin' || $provider === 'lightning'){
+            $btcPayCurrencies = $this->loadExchangeRates();
+            
+            if(!$btcPayCurrencies['result']){
+                return array('result' => false,'error' => $btcPayCurrencies['error'],'min_value' => '');
+            }
+            
+            elseif(!isset($btcPayCurrencies['data'][strtolower($currency)]) || $btcPayCurrencies['data'][strtolower($currency)]['value'] <= 0){
+                return array('result' => false,'error' => 'currencyError','min_value' => '');
+            }
+            
+            else {
+                $rate = 1/$btcPayCurrencies['data'][strtolower($currency)]['value'];
+                $min_value_btcpay = ($provider === 'bitcoin')? 0.000005869 : 0.000001;
+                $min_value = $min_value_btcpay/$rate;
+                
+               if($mode === 'calculation'){
+                    return array('result' => true, 'min_value' => round($min_value,2));
+                }
+                
+                else {                
+                    if(round($amount * $rate * 1000000) < round($min_value_btcpay * 1000000)){
+                        return array('result' => false,'error' => 'amountError','min_value' => round($min_value,2));
+                    }
+                    else {
+                        return array('result' => true);
+                    }
+                }
+            }
+        }
+        
+        if($provider === 'coinsnap'){
+        
+            $coinsnapCurrencies = $this->getCurrencies();
+
+            if(!is_array($coinsnapCurrencies)){
+                return array('result' => false,'error' => 'currenciesError','min_value' => '');
+            }
             if(!in_array($currency,$coinsnapCurrencies)){
                 return array('result' => false,'error' => 'currencyError','min_value' => '');
             }
-            elseif($amount === null || $amount === 0){
-                return array('result' => false,'error' => 'amountError','min_value' => 0);
+            
+            $min_value_array = array(
+                "SATS" => 1,
+                "JPY" => 1,
+                "RUB" => 1,
+                "BTC" => 0.000001
+            );
+            
+            $min_value = (isset($min_value_array[$currency]))? $min_value_array[$currency] : 0.01;
+            
+            if($mode === 'calculation'){
+                return array('result' => true,'min_value' => $min_value);
             }
-            elseif(($currency === "SATS" || $currency === "JPY" || $currency === "RUB") && $amount < 1){
-                return array('result' => false,'error' => 'amountError','min_value' => 1);
-            }
-            elseif($currency === "BTC" && $amount < 0.000001){
-                return array('result' => false,'error' => 'amountError','min_value' => 0.000001);
-            }
-            elseif($amount < 0.01){ 
-                return array('result' => false,'error' => 'amountError','min_value' => 0.01);
-            }
+            
             else {
-                return array('result' => true);
-            }
-        }
-        else {
-            return array('result' => false,'error' => 'currenciesError','min_value' => '');
+                if($amount === null || $amount === 0){
+                    return array('result' => false,'error' => 'amountError');
+                }
+                elseif($amount < $min_value){
+                    return array('result' => false,'error' => 'amountError','min_value' => $min_value);
+                }
+                else {
+                    return array('result' => true);
+                }
+            }            
         }
     }
     

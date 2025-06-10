@@ -20,9 +20,13 @@
  */ 
 
 defined('ABSPATH') || exit;
+if(!defined('COINSNAPEDD_PLUGIN_VERSION')){ define( 'COINSNAPEDD_PLUGIN_VERSION', '1.0.0' ); }
 if(!defined('COINSNAPEDD_REFERRAL_CODE')){ define( 'COINSNAPEDD_REFERRAL_CODE', 'D18876' ); }
 if(!defined('COINSNAPEDD_PHP_VERSION')){ define( 'COINSNAPEDD_PHP_VERSION', '7.4' ); }
 if(!defined('COINSNAPEDD_WP_VERSION')){ define( 'COINSNAPEDD_WP_VERSION', '5.2' ); }
+if(!defined('COINSNAP_SERVER_URL')){define( 'COINSNAP_SERVER_URL', 'https://app.coinsnap.io' );}
+if(!defined('COINSNAP_API_PATH')){define( 'COINSNAP_API_PATH', '/api/v1/');}
+if(!defined('COINSNAP_SERVER_PATH')){define( 'COINSNAP_SERVER_PATH', 'stores' );}
 if(!defined('COINSNAP_CURRENCIES')){define( 'COINSNAP_CURRENCIES', array("EUR","USD","SATS","BTC","CAD","JPY","GBP","CHF","RUB") );}
 
 include_once(ABSPATH . 'wp-admin/includes/plugin.php' );    
@@ -47,12 +51,243 @@ final class CoinsnapEDD {
             add_filter('edd_settings_sections_gateways', array( $this, 'settings_sections_gateways' ), 1, 1);
             add_filter('edd_settings_gateways', array( $this, 'settings_gateways' ), 1, 1);
             add_filter('edd_gateway_settings_url_coinsnap', array( $this, 'edd_gateway_settings_url' ), 1, 1);
-            add_action('admin_notices', array($this, 'coinsnap_notice'));    
+            add_action('admin_notices', array($this, 'coinsnap_notice'));
+            add_action( 'admin_enqueue_scripts', [$this, 'enqueueAdminScripts'] );
+            add_action( 'wp_ajax_coinsnap_connection_handler', [$this, 'coinsnapConnectionHandler'] );
+            add_action( 'wp_ajax_btcpay_server_apiurl_handler', [$this, 'btcpayApiUrlHandler']);
         }
         
 	add_action('edd_coinsnap_cc_form', '__return_false');        	
         add_action('edd_gateway_coinsnap', array( $this, 'coinsnap_payment' ));		    
         add_action('init', array( $this, 'process_webhook'));
+        
+        // Adding template redirect handling for btcpay-settings-callback.
+        add_action( 'template_redirect', function(){
+            global $wp_query;
+            $notice = new \Coinsnap\Util\Notice();
+
+            // Only continue on a btcpay-settings-callback request.
+            if (!isset( $wp_query->query_vars['btcpay-settings-callback'])) {
+                return;
+            }
+
+            $CoinsnapBTCPaySettingsUrl = admin_url('edit.php?post_type=download&page=edd-settings&tab=gateways&section=coinsnap');
+
+            $rawData = file_get_contents('php://input');
+
+            $btcpay_server_url = edd_get_option( 'btcpay_server_url');
+            $btcpay_api_key  = filter_input(INPUT_POST,'apiKey',FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+
+            $client = new \Coinsnap\Client\Store($btcpay_server_url,$btcpay_api_key);
+            if (count($client->getStores()) < 1) {
+                $messageAbort = __('Error on verifiying redirected API Key with stored BTCPay Server url. Aborting API wizard. Please try again or continue with manual setup.', 'coinsnap-for-easy-digital-downloads');
+                $notice->addNotice('error', $messageAbort);
+                wp_redirect($CoinsnapBTCPaySettingsUrl);
+            }
+
+            // Data does get submitted with url-encoded payload, so parse $_POST here.
+            if (!empty($_POST) || wp_verify_nonce(filter_input(INPUT_POST,'wp_nonce',FILTER_SANITIZE_FULL_SPECIAL_CHARS),'-1')) {
+                $data['apiKey'] = filter_input(INPUT_POST,'apiKey',FILTER_SANITIZE_FULL_SPECIAL_CHARS) ?? null;
+                $permissions = (isset($_POST['permissions']) && is_array($_POST['permissions']))? $_POST['permissions'] : null;
+                if (isset($permissions)) {
+                    foreach ($permissions as $key => $value) {
+                        $data['permissions'][$key] = sanitize_text_field($permissions[$key] ?? null);
+                    }
+                }
+            }
+
+            if (isset($data['apiKey']) && isset($data['permissions'])) {
+
+                $apiData = new \Coinsnap\Client\BTCPayApiAuthorization($data);
+                if ($apiData->hasSingleStore() && $apiData->hasRequiredPermissions()) {
+
+                    edd_update_option( 'btcpay_api_key', $apiData->getApiKey());
+                    edd_update_option( 'btcpay_store_id', $apiData->getStoreID());
+                    edd_update_option( 'coinsnap_provider', 'btcpay');
+
+                    $notice->addNotice('success', __('Successfully received api key and store id from BTCPay Server API. Please finish setup by saving this settings form.', 'coinsnap-for-easy-digital-downloads'));
+
+                    // Register a webhook.
+
+                    if ($this->registerWebhook($apiData->getStoreID(), $apiData->getApiKey(), $this->get_webhook_url())) {
+                        $messageWebhookSuccess = __( 'Successfully registered a new webhook on BTCPay Server.', 'coinsnap-for-easy-digital-downloads' );
+                        $notice->addNotice('success', $messageWebhookSuccess, true );
+                    }
+                    else {
+                        $messageWebhookError = __( 'Could not register a new webhook on the store.', 'coinsnap-for-easy-digital-downloads' );
+                        $notice->addNotice('error', $messageWebhookError );
+                    }
+                    wp_redirect($CoinsnapBTCPaySettingsUrl);
+                    exit();
+                }
+                else {
+                    $notice->addNotice('error', __('Please make sure you only select one store on the BTCPay API authorization page.', 'coinsnap-for-easy-digital-downloads'));
+                    wp_redirect($CoinsnapBTCPaySettingsUrl);
+                    exit();
+                }
+            }
+
+            $notice->addNotice('error', __('Error processing the data from Coinsnap. Please try again.', 'coinsnap-for-easy-digital-downloads'));
+            wp_redirect($CoinsnapBTCPaySettingsUrl);
+        });
+    }
+    
+    public function coinsnapConnectionHandler(){
+        
+        $_nonce = filter_input(INPUT_POST,'_wpnonce',FILTER_SANITIZE_STRING);
+        
+        if(empty($this->getApiUrl()) || empty($this->getApiKey())){
+            $response = [
+                    'result' => false,
+                    'message' => __('EasyDigitalDownloads: empty gateway URL or API Key', 'coinsnap-for-easy-digital-downloads')
+            ];
+            $this->sendJsonResponse($response);
+        }
+        
+        $_provider = $this->get_payment_provider();
+        $client = new \Coinsnap\Client\Invoice($this->getApiUrl(),$this->getApiKey());
+        $store = new \Coinsnap\Client\Store($this->getApiUrl(),$this->getApiKey());
+        $currency = edd_get_currency();
+        
+        
+        if($_provider === 'btcpay'){
+            try {
+                $storePaymentMethods = $store->getStorePaymentMethods($this->getStoreId());
+
+                if ($storePaymentMethods['code'] === 200) {
+                    if($storePaymentMethods['result']['onchain'] && !$storePaymentMethods['result']['lightning']){
+                        $checkInvoice = $client->checkPaymentData(0,$currency,'bitcoin','calculation');
+                    }
+                    elseif($storePaymentMethods['result']['lightning']){
+                        $checkInvoice = $client->checkPaymentData(0,$currency,'lightning','calculation');
+                    }
+                }
+            }
+            catch (\Exception $e) {
+                $response = [
+                        'result' => false,
+                        'message' => __('EasyDigitalDownloads: API connection is not established', 'coinsnap-for-easy-digital-downloads')
+                ];
+                $this->sendJsonResponse($response);
+            }
+        }
+        else {
+            $checkInvoice = $client->checkPaymentData(0,$currency,'coinsnap','calculation');
+        }
+        
+        if(isset($checkInvoice) && $checkInvoice['result']){
+            $connectionData = __('Min order amount is', 'coinsnap-for-easy-digital-downloads') .' '. $checkInvoice['min_value'].' '.$currency;
+        }
+        else {
+            $connectionData = __('No payment method is configured', 'coinsnap-for-easy-digital-downloads');
+        }
+        
+        $_message_disconnected = ($_provider !== 'btcpay')? 
+            __('EasyDigitalDownloads: Coinsnap server is disconnected', 'coinsnap-for-easy-digital-downloads') :
+            __('EasyDigitalDownloads: BTCPay server is disconnected', 'coinsnap-for-easy-digital-downloads');
+        $_message_connected = ($_provider !== 'btcpay')?
+            __('EasyDigitalDownloads: Coinsnap server is connected', 'coinsnap-for-easy-digital-downloads') : 
+            __('EasyDigitalDownloads: BTCPay server is connected', 'coinsnap-for-easy-digital-downloads');
+        
+        if( wp_verify_nonce($_nonce,'coinsnapedd-ajax-nonce') ){
+            $response = ['result' => false,'message' => $_message_disconnected];
+
+            try {
+                $this_store = $store->getStore($this->getStoreId());
+                
+                if ($this_store['code'] !== 200) {
+                    $this->sendJsonResponse($response);
+                }
+                
+                $webhookExists = $this->webhookExists($this->getStoreId(), $this->getApiKey(), $this->get_webhook_url());
+
+                if($webhookExists) {
+                    $response = ['result' => true,'message' => $_message_connected.' ('.$connectionData.')'];
+                    $this->sendJsonResponse($response);
+                }
+
+                $webhook = $this->registerWebhook( $this->getStoreId(), $this->getApiKey(), $this->get_webhook_url());
+                $response['result'] = (bool)$webhook;
+                $response['message'] = $webhook ? $_message_connected.' ('.$connectionData.')' : $_message_disconnected.' (Webhook)';
+            }
+            catch (\Exception $e) {
+                $response['message'] =  __('EasyDigitalDownloads: API connection is not established', 'coinsnap-for-easy-digital-downloads');
+            }
+
+            $this->sendJsonResponse($response);
+        }      
+    }
+
+    private function sendJsonResponse(array $response): void {
+        echo wp_json_encode($response);
+        exit();
+    }
+    
+    public function enqueueAdminScripts() {
+	// Register the CSS file
+	wp_register_style( 'coinsnapedd-admin-styles', plugins_url('assets/css/backend-style.css', __FILE__ ), array(), COINSNAPEDD_PLUGIN_VERSION );
+	// Enqueue the CSS file
+	wp_enqueue_style( 'coinsnapedd-admin-styles' );
+        //  Enqueue admin fileds handler script
+        wp_enqueue_script('coinsnapedd-admin-fields',plugins_url('assets/js/adminFields.js', __FILE__ ),[ 'jquery' ],COINSNAPEDD_PLUGIN_VERSION,true);
+        wp_enqueue_script('coinsnapedd-connection-check',plugins_url('assets/js/connectionCheck.js', __FILE__ ),[ 'jquery' ],COINSNAPEDD_PLUGIN_VERSION,true);
+        wp_localize_script('coinsnapedd-connection-check', 'coinsnapedd_ajax', array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce'  => wp_create_nonce( 'coinsnapedd-ajax-nonce' )
+        ));
+    }
+    
+    /**
+     * Handles the BTCPay server AJAX callback from the settings form.
+     */
+    public function btcpayApiUrlHandler() {
+        $_nonce = filter_input(INPUT_POST,'apiNonce',FILTER_SANITIZE_STRING);
+        if ( !wp_verify_nonce( $_nonce, 'coinsnapedd-ajax-nonce' ) ) {
+            wp_die('Unauthorized!', '', ['response' => 401]);
+        }
+        
+        if ( current_user_can( 'manage_options' ) ) {
+            $host = filter_var(filter_input(INPUT_POST,'host',FILTER_SANITIZE_STRING), FILTER_VALIDATE_URL);
+
+            if ($host === false || (substr( $host, 0, 7 ) !== "http://" && substr( $host, 0, 8 ) !== "https://")) {
+                wp_send_json_error("Error validating BTCPayServer URL.");
+            }
+
+            $permissions = array_merge([
+		'btcpay.store.canviewinvoices',
+		'btcpay.store.cancreateinvoice',
+		'btcpay.store.canviewstoresettings',
+		'btcpay.store.canmodifyinvoices'
+            ],
+            [
+		'btcpay.store.cancreatenonapprovedpullpayments',
+		'btcpay.store.webhooks.canmodifywebhooks',
+            ]);
+
+            try {
+		// Create the redirect url to BTCPay instance.
+		$url = \Coinsnap\Client\BTCPayApiKey::getAuthorizeUrl(
+                    $host,
+                    $permissions,
+                    'GiveWP',
+                    true,
+                    true,
+                    home_url('?btcpay-settings-callback'),
+                    null
+		);
+
+		// Store the host to options before we leave the site.
+		edd_update_option('btcpay_server_url', $host);
+
+		// Return the redirect url.
+		wp_send_json_success(['url' => $url]);
+            }
+            
+            catch (\Throwable $e) {
+                
+            }
+	}
+        wp_send_json_error("Error processing Ajax request.");
     }
     
     
@@ -216,13 +451,35 @@ final class CoinsnapEDD {
                 'id'   => 'coinsnap',
                 'name' => '<strong>' . __('Coinsnap Settings', 'coinsnap-for-easy-digital-downloads') . '</strong>',
                 'type' => 'header',
+                'desc' => '<div id="coinsnapConnectionStatus"></div>',
             ),
-            'coinsnap_seller_id' => array(
+            
+            'coinsnap_connection' => array(
+                'id'   => 'coinsnap',
+                'name'  => __( 'Connection Status', 'coinsnap-for-easy-digital-downloads' ),
+                'type' => 'descriptive_text',
+                'desc' => '<div id="coinsnapConnectionStatus"></div>',
+            ),
+            
+            'coinsnap_provider' => array(
+                    'id'   => 'coinsnap_provider',
+                    'name' => __( 'Payment provider', 'coinsnap-for-easy-digital-downloads' ),
+                    'desc' => __( 'Select payment provider', 'coinsnap-for-easy-digital-downloads' ),
+                    'type'        => 'select',
+                    'options'   => [
+                        'coinsnap'  => 'Coinsnap',
+                        'btcpay'    => 'BTCPay Server'
+                    ]
+                ),
+            
+            //  Coinsnap fields
+            'coinsnap_store_id' => array(
                 'id'   => 'coinsnap_store_id',
                 'name' => __('Store ID', 'coinsnap-for-easy-digital-downloads'),
                 'desc' => __('Enter Store ID Given by Coinsnap', 'coinsnap-for-easy-digital-downloads'),
                 'type' => 'text',
                 'size' => 'regular',
+                'class' => 'coinsnap',
             ),
             'coinsnap_api_key' => array(
                 'id'   => 'coinsnap_api_key',
@@ -230,7 +487,39 @@ final class CoinsnapEDD {
                 'desc' => __('Enter API Key Given by Coinsnap', 'coinsnap-for-easy-digital-downloads'),
                 'type' => 'text',
                 'size' => 'regular',
+                'class' => 'coinsnap',
             ),
+            
+            //  BTCPay fields
+            'btcpay_server_url' => array(
+                    'id' => 'btcpay_server_url',
+                    'name'       => __( 'BTCPay server URL*', 'coinsnap-for-easy-digital-downloads' ),
+                    'type'        => 'text',
+                    'desc'        => __( '<a href="#" class="btcpay-apikey-link">Check connection</a>', 'coinsnap-for-easy-digital-downloads' ).'<br/><br/><button class="button btcpay-apikey-link" id="btcpay_wizard_button" target="_blank">'. __('Generate API key','coinsnap-for-easy-digital-downloads').'</button>',
+                    'std'     => '',
+                'size' => 'regular',
+                    'class' => 'btcpay'
+                ),
+            
+            'btcpay_store_id' => array(
+                    'id'   => 'btcpay_store_id',
+                    'name' => __( 'Store ID*', 'coinsnap-for-easy-digital-downloads' ),
+                    'desc' => __( 'Enter Store ID', 'coinsnap-for-easy-digital-downloads' ),
+                    'type' => 'text',
+                    'std'     => '',
+                'size' => 'regular',
+                    'class' => 'btcpay'
+                ),
+            'btcpay_api_key' => array(
+                    'id'   => 'btcpay_api_key',
+                    'name' => __( 'API Key*', 'coinsnap-for-easy-digital-downloads' ),
+                    'desc' => __( 'Enter API Key', 'coinsnap-for-easy-digital-downloads' ),
+                    'type' => 'text',
+                    'std'     => '',
+                'size' => 'regular',
+                    'class' => 'btcpay'
+                ),
+            
             'coinsnap_autoredirect' => array(
                 'id'   => 'coinsnap_autoredirect',
                 'name' => __('Redirect after payment', 'coinsnap-for-easy-digital-downloads'),
@@ -270,6 +559,50 @@ final class CoinsnapEDD {
         return $gateway_settings;
     }
     
+    public function coinsnapedd_amount_validation( $amount, $currency ) {
+        $client =new \Coinsnap\Client\Invoice($this->getApiUrl(), $this->getApiKey());
+        $store = new \Coinsnap\Client\Store($this->getApiUrl(), $this->getApiKey());
+        
+        try {
+            $this_store = $store->getStore($this->getStoreId());
+            $_provider = $this->get_payment_provider();
+            if($_provider === 'btcpay'){
+                try {
+                    $storePaymentMethods = $store->getStorePaymentMethods($this->getStoreId());
+
+                    if ($storePaymentMethods['code'] === 200) {
+                        if(!$storePaymentMethods['result']['onchain'] && !$storePaymentMethods['result']['lightning']){
+                            $errorMessage = __( 'No payment method is configured on BTCPay server', 'coinsnap-for-easy-digital-downloads' );
+                            $checkInvoice = array('result' => false,'error' => esc_html($errorMessage));
+                        }
+                    }
+                    else {
+                        $errorMessage = __( 'Error store loading. Wrong or empty Store ID', 'coinsnap-for-easy-digital-downloads' );
+                        $checkInvoice = array('result' => false,'error' => esc_html($errorMessage));
+                    }
+
+                    if($storePaymentMethods['result']['onchain'] && !$storePaymentMethods['result']['lightning']){
+                        $checkInvoice = $client->checkPaymentData((float)$amount,strtoupper( $currency ),'bitcoin');
+                    }
+                    elseif($storePaymentMethods['result']['lightning']){
+                        $checkInvoice = $client->checkPaymentData((float)$amount,strtoupper( $currency ),'lightning');
+                    }
+                }
+                catch (\Throwable $e){
+                    $errorMessage = __( 'API connection is not established', 'coinsnap-for-easy-digital-downloads' );
+                    $checkInvoice = array('result' => false,'error' => esc_html($errorMessage));
+                }
+            }
+            else {
+                $checkInvoice = $client->checkPaymentData((float)$amount,strtoupper( $currency ));
+            }
+        }
+        catch (\Throwable $e){
+            $errorMessage = __( 'API connection is not established', 'coinsnap-for-easy-digital-downloads' );
+            $checkInvoice = array('result' => false,'error' => esc_html($errorMessage));
+        }
+        return $checkInvoice;
+    }
     
     public function coinsnap_payment($purchase_data){
         global $edd_options;
@@ -325,7 +658,8 @@ final class CoinsnapEDD {
             $currency_code = edd_get_currency();
             
             $client =new \Coinsnap\Client\Invoice($this->getApiUrl(), $this->getApiKey());
-            $checkInvoice = $client->checkPaymentData($amount,strtoupper($currency_code));
+            
+            $checkInvoice = $this->coinsnapedd_amount_validation($amount,strtoupper($currency_code));
                 
             if($checkInvoice['result'] === true){
             
@@ -423,23 +757,26 @@ final class CoinsnapEDD {
         echo "OK";
         exit;
 		
-    }               
-    
-    
+    }
 	
-
+    private function get_payment_provider() {
+        return (edd_get_option( 'coinsnap_provider') === 'btcpay')? 'btcpay' : 'coinsnap';
+    }
 
     private function get_webhook_url() {
-		return esc_url_raw( add_query_arg( array( 'edd-listener' => 'coinsnap' ), home_url( 'index.php' ) ) );
-	}
+        return esc_url_raw( add_query_arg( array( 'edd-listener' => 'coinsnap' ), home_url( 'index.php' ) ) );
+    }
+    
     private function getApiKey() {
-		return edd_get_option( 'coinsnap_api_key', '' );
-	}
+        return ($this->get_payment_provider() === 'btcpay')? edd_get_option( 'btcpay_api_key') : edd_get_option( 'coinsnap_api_key', '' );
+    }
+    
     private function getStoreId() {
-		return edd_get_option( 'coinsnap_store_id', '' );
-	}
+	return ($this->get_payment_provider() === 'btcpay')? edd_get_option( 'btcpay_store_id') : edd_get_option( 'coinsnap_store_id', '' );
+    }
+    
     public function getApiUrl() {
-        return 'https://app.coinsnap.io';
+        return ($this->get_payment_provider() === 'btcpay')? edd_get_option( 'btcpay_server_url') : COINSNAP_SERVER_URL;
     }	
 
     public function webhookExists(string $storeId, string $apiKey, string $webhook): bool {	
@@ -494,6 +831,25 @@ final class CoinsnapEDD {
         }
     }
 }
+
+add_action('init', function() {
+    
+//  Session launcher
+    if ( ! session_id() ) {
+        session_start();
+    }
+    
+// Setting up and handling custom endpoint for api key redirect from BTCPay Server.
+    add_rewrite_endpoint('btcpay-settings-callback', EP_ROOT);
+});
+
+// To be able to use the endpoint without appended url segments we need to do this.
+add_filter('request', function($vars) {
+    if (isset($vars['btcpay-settings-callback'])) {
+        $vars['btcpay-settings-callback'] = true;
+    }
+    return $vars;
+});
 
 function CoinsnapEDD(){
     return CoinsnapEDD::getInstance();
