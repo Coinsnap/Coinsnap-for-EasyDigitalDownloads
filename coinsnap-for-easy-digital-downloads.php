@@ -269,7 +269,7 @@ final class CoinsnapEDD {
 		$url = \Coinsnap\Client\BTCPayApiKey::getAuthorizeUrl(
                     $host,
                     $permissions,
-                    'GiveWP',
+                    'Easy Digital Downloads',
                     true,
                     true,
                     home_url('?btcpay-settings-callback'),
@@ -451,7 +451,7 @@ final class CoinsnapEDD {
                 'id'   => 'coinsnap',
                 'name' => '<strong>' . __('Coinsnap Settings', 'coinsnap-for-easy-digital-downloads') . '</strong>',
                 'type' => 'header',
-                'desc' => '<div id="coinsnapConnectionStatus"></div>',
+                'desc' => '',
             ),
             
             'coinsnap_connection' => array(
@@ -716,7 +716,9 @@ final class CoinsnapEDD {
                     /* translators: 1: Amount, 2: Currency */
                     __( 'Invoice amount cannot be less than %1$s %2$s', 'coinsnap-for-easy-digital-downloads' ), $checkInvoice['min_value'], strtoupper( $currency_code ));
                 }
-                
+                else {
+                    $errorMessage = $checkInvoice['error'];
+                }
                 edd_record_gateway_error(esc_html__('Payment Error', 'coinsnap-for-easy-digital-downloads'), $errorMessage, $payment_id);
                 edd_set_error(esc_html__('Payment Error', 'coinsnap-for-easy-digital-downloads'), $errorMessage);
                 edd_send_back_to_checkout('?payment-mode=' . $purchase_data['post_data']['edd-gateway']);
@@ -748,9 +750,9 @@ final class CoinsnapEDD {
 		}
 
         $order_status = 'pending';
-		if ($status == 'Expired') $order_status = edd_get_option('expired_status', '');
-		else if ($status == 'Processing') $order_status = edd_get_option('processing_status', '');
-		else if ($status == 'Settled') $order_status = edd_get_option('settled_status', '');
+        if ($status == 'Expired'){ $order_status = edd_get_option('expired_status', '');}
+        elseif ($status == 'Processing'){ $order_status = edd_get_option('processing_status', '');}
+        elseif ($status == 'Settled'){ $order_status = edd_get_option('settled_status', '');}
                 
         edd_update_payment_status( $order_id, $order_status );
         
@@ -780,50 +782,42 @@ final class CoinsnapEDD {
     }	
 
     public function webhookExists(string $storeId, string $apiKey, string $webhook): bool {	
-		try {		
-			$whClient = new \Coinsnap\Client\Webhook( $this->getApiUrl(), $apiKey );		
-			$Webhooks = $whClient->getWebhooks( $storeId );																		
-            
-			
-			foreach ($Webhooks as $Webhook){					
-//				$this->deleteWebhook($storeId,$apiKey, $Webhook->getData()['id']);
-				if ($Webhook->getData()['url'] == $webhook) return true;	
-			}
-		}catch (\Throwable $e) {			
-			return false;
-		}
-	
-		return false;
+	try {
+            $whClient = new \Coinsnap\Client\Webhook( $this->getApiUrl(), $apiKey );		
+            $Webhooks = $whClient->getWebhooks( $storeId );
+            foreach ($Webhooks as $Webhook){
+                if($Webhook->getData()['url'] == $webhook){
+                    return true; 
+                }
+            }
 	}
+        catch (\Throwable $e) {			
+            return false;
+	}
+	return false;
+    }
         
-	public function registerWebhook(string $storeId, string $apiKey, string $webhook): bool {	
-		try {			
-			$whClient = new \Coinsnap\Client\Webhook($this->getApiUrl(), $apiKey);
-			
-			$webhook = $whClient->createWebhook(
-				$storeId,   //$storeId
-				$webhook, //$url
-				self::WEBHOOK_EVENTS,   //$specificEvents
-				null    //$secret
-			);		
-			
-			return true;
-		} catch (\Throwable $e) {
-			return false;	
-		}
-
-		return false;
-	}
-
-    public function deleteWebhook(string $storeId, string $apiKey, string $webhookid): bool {	    
-		
+    public function registerWebhook(string $storeId, string $apiKey, string $webhook): bool {	
         try {			
             $whClient = new \Coinsnap\Client\Webhook($this->getApiUrl(), $apiKey);
-			
-            $webhook = $whClient->deleteWebhook(
-                $storeId,   //$storeId
-                $webhookid, //$url			
-            );					
+            $webhook = $whClient->createWebhook(
+		$storeId,   //$storeId
+		$webhook, //$url
+		self::WEBHOOK_EVENTS,   //$specificEvents
+		null    //$secret
+            );		
+            return true;
+	}
+        catch (\Throwable $e) {
+            return false;	
+	}
+        return false;
+    }
+
+    public function deleteWebhook(string $storeId, string $apiKey, string $webhookid): bool {	    
+	try {			
+            $whClient = new \Coinsnap\Client\Webhook($this->getApiUrl(), $apiKey);
+	    $webhook = $whClient->deleteWebhook(storeId,$webhookid);					
             return true;
 	}
         catch (\Throwable $e) {
