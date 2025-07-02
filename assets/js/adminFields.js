@@ -42,7 +42,7 @@ jQuery(document).ready(function ($) {
         const host = $('#edd_settings\\[btcpay_server_url\\]').val();
 	if (isValidUrl(host)) {
             let data = {
-                'action': 'btcpay_server_apiurl_handler',
+                'action': 'coinsnapedd_btcpay_server_apiurl_handler',
                 'host': host,
                 'apiNonce': coinsnapedd_ajax.nonce
             };

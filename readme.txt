@@ -1,4 +1,4 @@
-=== Bitcoin payment for Easy Digital Downloads ===
+=== Coinsnap for Easy Digital Downloads ===
 Contributors: coinsnap
 Tags:  Coinsnap, Easy Digital Downloads, Bitcoin, Lightning 
 Tested up to: 6.8
@@ -84,7 +84,7 @@ Simply register on [Coinsnap](https://app.coinsnap.io/register), enter your own 
 
 == Installation ==
 
-### 1. Install the Coinsnap Easy Digital Downloads plug-in from the WordPress directory. ###
+= 1. Install the Coinsnap Easy Digital Downloads plug-in from the WordPress directory. =
 
 The Coinsnap Easy Digital Downloads plug-in can be searched and installed in the WordPress plugin directory.
 
@@ -95,7 +95,7 @@ Then click Install.
 
 After successful installation, click Activate and then you can start setting up the plugin.
 
-### 1.1. Add plugin ###
+= 1.1. Add plugin =
 
 If you don’t want to install add-on directly via plugin, you can download Coinsnap Easy Digital Downloads plug-in from Coinsnap Github page or from WordPress directory and install it via “Upload Plugin” function:
 
@@ -105,11 +105,11 @@ Click “Install now” and Coinsnap Easy Digital Downloads plug-in will be inst
 
 After you have successfully installed the plugin, you can proceed with the connection to Coinsnap payment gateway.
 
-### 1.2. Configure Coinsnap Easy Digital Downloads plug-in ###
+= 1.2. Configure Coinsnap Easy Digital Downloads plug-in =
 
 After the Coinsnap Easy Digital Downloads plug-in is installed and activated, a notice appears that the plugin still needs to be configured.
 
-### 1.3. Deposit Coinsnap data ###
+= 1.3. Deposit Coinsnap data =
 
 * Navigate to Downloads > Settings > Payments
 * Select coinsnap in Active Gateways and click Save
@@ -118,21 +118,21 @@ After the Coinsnap Easy Digital Downloads plug-in is installed and activated, a 
 
 If you don’t have a Coinsnap account yet, you can do so via the link shown: Coinsnap Registration
 
-### 2. Create Coinsnap account ####
+= 2. Create Coinsnap account =
 
-### 2.1. Create a Coinsnap Account ####
+= 2.1. Create a Coinsnap Account =
 
 Now go to the Coinsnap website at: https://app.coinsnap.io/register and open an account by entering your email address and a password of your choice.
 
 If you are using a Lightning Wallet with Lightning Login, then you can also open a Coinsnap account with it.
 
-### 2.2. Confirm email address ####
+= 2.2. Confirm email address =
 
 You will receive an email to the given email address with a confirmation link, which you have to confirm. If you do not find the email, please check your spam folder.
 
 Then please log in to the Coinsnap backend with the appropriate credentials.
 
-### 2.3. Set up website at Coinsnap ###
+= 2.3. Set up website at Coinsnap =
 
 After you sign up, you will be asked to provide two pieces of information.
 
@@ -145,24 +145,24 @@ A Lightning address is similar to an e-mail address. Lightning payments are forw
 For more information on Lightning addresses and the corresponding Lightning wallet providers, click here:
 https://coinsnap.io/lightning-wallet-mit-lightning-adresse/
 
-### 3. Connect Coinsnap account with Easy Digital Downloads plug-in ###
+= 3. Connect Coinsnap account with Easy Digital Downloads plug-in =
 
-### 3.1. Easy Digital Downloads Coinsnap Settings ###
+= 3.1. Easy Digital Downloads Coinsnap Settings =
 
 * Navigate to Downloads > Settings > Payments
 * Select coinsnap in Active Gateways and click Save
 * Navigate to Downloads > Settings > Payments > Coinsnap and enter Store ID and API Key
 * Click Save Setting
 
-### 4. Test payment ###
+= 4. Test payment =
 
-### 4.1. Test payment in Easy Digital Downloads ###
+= 4.1. Test payment in Easy Digital Downloads =
 
 After all the settings have been made, a test payment should be made.
 
 We make a real donation payment in our test Easy Digital Downloads site.
 
-### 4.2. Bitcoin + Lightning payment page ###
+= 4.2. Bitcoin + Lightning payment page =
 
 The Bitcoin + Lightning payment page is now displayed, offering the payer the option to pay with Bitcoin or also with Lightning. Both methods are integrated in the displayed QR code.
 

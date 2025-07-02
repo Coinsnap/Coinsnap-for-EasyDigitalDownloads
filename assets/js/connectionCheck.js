@@ -10,7 +10,7 @@ jQuery(function ($) {
     
         let ajaxurl = coinsnapedd_ajax['ajax_url'];
         let data = {
-            action: 'coinsnap_connection_handler',
+            action: 'coinsnapedd_connection_handler',
             _wpnonce: coinsnapedd_ajax['nonce']
         };
 
@@ -20,7 +20,7 @@ jQuery(function ($) {
             let resultClass = (connectionCheckResponse.result === true)? 'success' : 'error';
             $connectionCheckMessage = '<div id="coinsnapConnectionTopStatus" class="message '+resultClass+' notice edd-notice" style="margin-top: 10px;"><p>'+ connectionCheckResponse.message +'</p></div>';
 
-            $(connectionCheckElement).append($connectionCheckMessage);
+            $(connectionCheckElement).after($connectionCheckMessage);
 
             if($('#coinsnapConnectionStatus').length){
                 $('#coinsnapConnectionStatus').html('<span class="'+resultClass+'">'+ connectionCheckResponse.message +'</span>');
