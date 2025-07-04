@@ -1,6 +1,6 @@
 <?php
 /*
- * Plugin Name:     Coinsnap for Easy Digital Downloads
+ * Plugin Name:     Bitcoin payment for Easy Digital Downloads
  * Plugin URI:      https://www.coinsnap.io
  * Description:     With this Bitcoin payment plugin for Easy Digital Downloads you can now offer downloads for Bitcoin right in the Easy Digital Downloads plugin!
  * Version:         1.0.0
@@ -770,7 +770,7 @@ final class CoinsnapEDD {
                 wp_die('No Coinsnap invoiceId provided', '', ['response' => 400]);
             }
             
-            $invoice_id = $postData->invoiceId;
+            $invoice_id = esc_html($postData->invoiceId);
             
             if(strpos($invoice_id,'test_') !== false){
                 wp_die('Successful webhook test', '', ['response' => 200]);
@@ -883,12 +883,6 @@ final class CoinsnapEDD {
 }
 
 add_action('init', function() {
-    
-//  Session launcher
-    if ( ! session_id() ) {
-        session_start();
-    }
-    
 // Setting up and handling custom endpoint for api key redirect from BTCPay Server.
     add_rewrite_endpoint('coinsnap-for-edd-btcpay-settings-callback', EP_ROOT);
 });
