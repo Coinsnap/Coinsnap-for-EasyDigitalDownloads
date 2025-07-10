@@ -3,7 +3,7 @@
  * Plugin Name:     Bitcoin payment for Easy Digital Downloads
  * Plugin URI:      https://www.coinsnap.io
  * Description:     With this Bitcoin payment plugin for Easy Digital Downloads you can now offer downloads for Bitcoin right in the Easy Digital Downloads plugin!
- * Version:         1.0.0
+ * Version:         1.0.1
  * Author:          Coinsnap
  * Author URI:      https://coinsnap.io/
  * Text Domain:     coinsnap-for-easy-digital-downloads
@@ -20,7 +20,7 @@
  */ 
 
 defined('ABSPATH') || exit;
-if(!defined('COINSNAPEDD_PLUGIN_VERSION')){ define( 'COINSNAPEDD_PLUGIN_VERSION', '1.0.0' ); }
+if(!defined('COINSNAPEDD_PLUGIN_VERSION')){ define( 'COINSNAPEDD_PLUGIN_VERSION', '1.0.1' ); }
 if(!defined('COINSNAPEDD_REFERRAL_CODE')){ define( 'COINSNAPEDD_REFERRAL_CODE', 'D18876' ); }
 if(!defined('COINSNAPEDD_PHP_VERSION')){ define( 'COINSNAPEDD_PHP_VERSION', '7.4' ); }
 if(!defined('COINSNAPEDD_WP_VERSION')){ define( 'COINSNAPEDD_WP_VERSION', '5.2' ); }
@@ -371,36 +371,46 @@ final class CoinsnapEDD {
                 
                 if(!empty($coinsnap_api_key) && !empty($coinsnap_store_id)){
                     $client = new \Coinsnap\Client\Store($coinsnap_url, $coinsnap_api_key);
-                    $store = $client->getStore($coinsnap_store_id);
-                    if ($store['code'] === 200) {
-                        echo '<div class="notice notice-success"><p>';
-                        esc_html_e('EasyDigitalDownloads: Established connection to Coinsnap Server', 'coinsnap-for-easy-digital-downloads');
-                        echo '</p></div>';
+                    try {
                         
-                        if ( ! $this->webhookExists( $coinsnap_url, $coinsnap_api_key, $coinsnap_store_id ) ) {
-                            if ( ! $this->registerWebhook( $coinsnap_url, $coinsnap_api_key, $coinsnap_store_id ) ) {
-                                echo '<div class="notice notice-error"><p>';
-                                esc_html_e('EasyDigitalDownloads: Unable to create webhook on Coinsnap Server', 'coinsnap-for-easy-digital-downloads');
-                                echo '</p></div>';
+                        $store = $client->getStore($coinsnap_store_id);
+                        if ($store['code'] === 200) {
+                            echo '<div class="notice notice-success edd-notice"><p>';
+                            esc_html_e('EasyDigitalDownloads: Established connection to Coinsnap Server', 'coinsnap-for-easy-digital-downloads');
+                            echo '</p></div>';
+
+                            if ( !$this->webhookExists( $coinsnap_url, $coinsnap_api_key, $coinsnap_store_id ) ) {
+                                if ( !$this->registerWebhook( $coinsnap_url, $coinsnap_api_key, $coinsnap_store_id ) ) {
+                                    echo '<div class="notice notice-error edd-notice"><p>';
+                                    esc_html_e('EasyDigitalDownloads: Unable to create webhook on Coinsnap Server', 'coinsnap-for-easy-digital-downloads');
+                                    echo '</p></div>';
+                                }
+                                else {
+                                    echo '<div class="notice notice-success edd-notice"><p>';
+                                    esc_html_e('EasyDigitalDownloads: Successfully registered a new webhook on Coinsnap Server', 'coinsnap-for-easy-digital-downloads');
+                                    echo '</p></div>';
+                                }
                             }
                             else {
-                                echo '<div class="notice notice-success"><p>';
-                                esc_html_e('EasyDigitalDownloads: Successfully registered a new webhook on Coinsnap Server', 'coinsnap-for-easy-digital-downloads');
+                                echo '<div class="notice notice-info edd-notice"><p>';
+                                esc_html_e('EasyDigitalDownloads: Webhook already exists, skipping webhook creation', 'coinsnap-for-easy-digital-downloads');
                                 echo '</p></div>';
                             }
                         }
                         else {
-                            echo '<div class="notice notice-info"><p>';
-                            esc_html_e('EasyDigitalDownloads: Webhook already exists, skipping webhook creation', 'coinsnap-for-easy-digital-downloads');
+                            echo '<div class="notice notice-error edd-notice"><p>';
+                            esc_html_e('EasyDigitalDownloads: Coinsnap connection error:', 'coinsnap-for-easy-digital-downloads');
+                            echo esc_html($store['result']['message']);
                             echo '</p></div>';
                         }
+                        
                     }
-                    else {
-                        echo '<div class="notice notice-error"><p>';
+                    catch (\Throwable $e){
+                        echo '<div class="notice notice-error edd-notice"><p>';
                         esc_html_e('EasyDigitalDownloads: Coinsnap connection error:', 'coinsnap-for-easy-digital-downloads');
-                        echo esc_html($store['result']['message']);
+                        echo esc_html($e->getMessage());
                         echo '</p></div>';
-                    }
+                    }                    
                 }
         }
     }
@@ -499,7 +509,7 @@ final class CoinsnapEDD {
                     'id' => 'btcpay_server_url',
                     'name'       => __( 'BTCPay server URL*', 'coinsnap-for-easy-digital-downloads' ),
                     'type'        => 'text',
-                    'desc'        => __( '<a href="#" class="btcpay-apikey-link">Check connection</a>', 'coinsnap-for-easy-digital-downloads' ).'<br/><br/><button class="button btcpay-apikey-link" id="btcpay_wizard_button" target="_blank">'. __('Generate API key','coinsnap-for-easy-digital-downloads').'</button>',
+                    'desc'        => __( '<a href="#" class="btcpay-apikey-link">Check connection</a>', 'coinsnap-for-easy-digital-downloads' ).'<br/><br/><button class="button btcpay-apikey-link" type="button" id="btcpay_wizard_button" target="_blank">'. __('Generate API key','coinsnap-for-easy-digital-downloads').'</button>',
                     'std'     => '',
                 'size' => 'regular',
                     'class' => 'btcpay'

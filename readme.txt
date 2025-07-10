@@ -2,7 +2,7 @@
 Contributors: coinsnap
 Tags:  Coinsnap, Easy Digital Downloads, Bitcoin, Lightning 
 Tested up to: 6.8
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License:         GPL2
 License URI:     https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -177,18 +177,24 @@ Plugin's page on Coinsnap website: https://coinsnap.io/coinsnap-for-easy-digital
 
 == Screenshots ==
 
-1. Coinsnap for Easy Digital Downloads Add-on
-2. Easy Digital Downloads Plugin for Wordpress
-3. Plugin downloading from Github repository
-4. Manual plugin installation
-5. Payment gateways
-6. Plugins list
-7. Coinsnap payment settings
-8. Coinsnap register
-9. E-mail address confirmation
-10. Connect website with Coinsnap
-11. QR code on the Bitcoin payment page
+1. Coinsnap for Easy Digital Downloads Add-on installation
+2. Add-on is activated
+3. Coinsnap gateway connection settings
+4. BTCPay server gateway connection settings: server is disconnected
+5. API key generation with Setup Wizard: store selection
+6. API key generation with Setup Wizard: label setting
+7. BTCPay server gateway connection settings: server is connected
+8. Coinsnap payment settings
+9. Coinsnap register
+10. E-mail address confirmation
+11. Connect website with Coinsnap
+12. QR code on the Bitcoin payment page
   
 == Changelog ==
 = 1.0.0 :: 2025-07-04 =
 * Initial release. 
+
+= 1.0.1 :: 2025-07-10 =
+* Updated gateway connection error exception handler in backend.
+* Updated **Generate API key** button behavior.
+* Updated connection status indication.
