@@ -8,8 +8,8 @@ if (!defined('ABSPATH')) {
 header('Access-Control-Allow-Origin: *');
 
 use Coinsnap\Result\InvoicePaymentMethod;
-use Coinsnap\Http\PreciseNumber;
-use Coinsnap\Util\WPRemoteClient;
+use Coinsnap\Util\PreciseNumber;
+use Coinsnap\Http\WPRemoteClient;
 
 class Invoice extends AbstractClient{
     
