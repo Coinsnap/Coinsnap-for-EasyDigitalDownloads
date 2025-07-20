@@ -3,7 +3,7 @@
  * Plugin Name:     Bitcoin payment for Easy Digital Downloads
  * Plugin URI:      https://www.coinsnap.io
  * Description:     With this Bitcoin payment plugin for Easy Digital Downloads you can now offer downloads for Bitcoin right in the Easy Digital Downloads plugin!
- * Version:         1.0.1
+ * Version:         1.0.2
  * Author:          Coinsnap
  * Author URI:      https://coinsnap.io/
  * Text Domain:     coinsnap-for-easy-digital-downloads
@@ -12,7 +12,7 @@
  * Tested up to:    6.8
  * Requires at least: 5.2
  * Requires Plugins: easy-digital-downloads
- * EDD tested up to: 3.4.0
+ * EDD tested up to: 3.5.0
  * License:         GPL2
  * License URI:     https://www.gnu.org/licenses/gpl-2.0.html
  *
@@ -20,7 +20,7 @@
  */ 
 
 defined('ABSPATH') || exit;
-if(!defined('COINSNAPEDD_PLUGIN_VERSION')){ define( 'COINSNAPEDD_PLUGIN_VERSION', '1.0.1' ); }
+if(!defined('COINSNAPEDD_PLUGIN_VERSION')){ define( 'COINSNAPEDD_PLUGIN_VERSION', '1.0.2' ); }
 if(!defined('COINSNAPEDD_REFERRAL_CODE')){ define( 'COINSNAPEDD_REFERRAL_CODE', 'D18876' ); }
 if(!defined('COINSNAPEDD_PHP_VERSION')){ define( 'COINSNAPEDD_PHP_VERSION', '7.4' ); }
 if(!defined('COINSNAPEDD_WP_VERSION')){ define( 'COINSNAPEDD_WP_VERSION', '5.2' ); }
@@ -69,6 +69,10 @@ final class CoinsnapEDD {
             
             // Only continue on a coinsnap-for-edd-btcpay-settings-callback request.
             if (!isset( $wp_query->query_vars['coinsnap-for-edd-btcpay-settings-callback'])) {
+                return;
+            }
+            
+            if(!isset($wp_query->query_vars['coinsnap-for-edd-btcpay-nonce']) || !wp_verify_nonce($wp_query->query_vars['coinsnap-for-edd-btcpay-nonce'],'coinsnapedd-btcpay-nonce')){
                 return;
             }
 
@@ -509,7 +513,7 @@ final class CoinsnapEDD {
                     'id' => 'btcpay_server_url',
                     'name'       => __( 'BTCPay server URL*', 'coinsnap-for-easy-digital-downloads' ),
                     'type'        => 'text',
-                    'desc'        => __( '<a href="#" class="btcpay-apikey-link">Check connection</a>', 'coinsnap-for-easy-digital-downloads' ).'<br/><br/><button class="button btcpay-apikey-link" type="button" id="btcpay_wizard_button" target="_blank">'. __('Generate API key','coinsnap-for-easy-digital-downloads').'</button>',
+                    'desc'        => __( '<a href="#" class="btcpay-apikey-link">Check connection</a>', 'coinsnap-for-easy-digital-downloads' ).'<br/><br/><button class="button btcpay-apikey-link" type="button" id="pmpro_btcpay_wizard_button" target="_blank">'. __('Generate API key','coinsnap-for-easy-digital-downloads').'</button>',
                     'std'     => '',
                 'size' => 'regular',
                     'class' => 'btcpay'
@@ -901,6 +905,7 @@ add_action('init', function() {
 add_filter('request', function($vars) {
     if (isset($vars['coinsnap-for-edd-btcpay-settings-callback'])) {
         $vars['coinsnap-for-edd-btcpay-settings-callback'] = true;
+        $vars['coinsnap-for-edd-btcpay-nonce'] = wp_create_nonce('coinsnapedd-btcpay-nonce');
     }
     return $vars;
 });
