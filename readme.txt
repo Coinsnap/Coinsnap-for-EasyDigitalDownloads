@@ -2,7 +2,7 @@
 Contributors: coinsnap
 Tags:  Coinsnap, Easy Digital Downloads, Bitcoin, Lightning 
 Tested up to: 6.8
-Stable tag: 1.0.2
+Stable tag: 1.1.0
 License:         GPL2
 License URI:     https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -188,3 +188,9 @@ Plugin's page on Coinsnap website: https://coinsnap.io/coinsnap-for-easy-digital
 * Update: Added nonce check for BTCPay server request in Wizard setup flow.
 * Compatibility with Easy Digital Downloads 3.5. is tested.
 * Compatibility with Wordpress 6.8.2 is tested.
+
+= 1.1.0 :: 2025-08-18 =
+* Updated BTCPay server minimum payment amount calculation system
+* Updated BTCPay server events and webhook payload handler
+* Update: added convertation from SATS to BTC for BTCPay server.
+* Compatibility with Easy Digital Downloads 3.5.11 is tested.

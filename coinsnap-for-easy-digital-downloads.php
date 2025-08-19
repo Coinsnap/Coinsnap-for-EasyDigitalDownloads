@@ -3,7 +3,7 @@
  * Plugin Name:     Bitcoin payment for Easy Digital Downloads
  * Plugin URI:      https://www.coinsnap.io
  * Description:     With this Bitcoin payment plugin for Easy Digital Downloads you can now offer downloads for Bitcoin right in the Easy Digital Downloads plugin!
- * Version:         1.0.2
+ * Version:         1.1.0
  * Author:          Coinsnap
  * Author URI:      https://coinsnap.io/
  * Text Domain:     coinsnap-for-easy-digital-downloads
@@ -12,7 +12,7 @@
  * Tested up to:    6.8
  * Requires at least: 5.2
  * Requires Plugins: easy-digital-downloads
- * EDD tested up to: 3.5.0
+ * EDD tested up to: 3.5.1
  * License:         GPL2
  * License URI:     https://www.gnu.org/licenses/gpl-2.0.html
  *
@@ -20,7 +20,7 @@
  */ 
 
 defined('ABSPATH') || exit;
-if(!defined('COINSNAPEDD_PLUGIN_VERSION')){ define( 'COINSNAPEDD_PLUGIN_VERSION', '1.0.2' ); }
+if(!defined('COINSNAPEDD_PLUGIN_VERSION')){ define( 'COINSNAPEDD_PLUGIN_VERSION', '1.1.0' ); }
 if(!defined('COINSNAPEDD_REFERRAL_CODE')){ define( 'COINSNAPEDD_REFERRAL_CODE', 'D18876' ); }
 if(!defined('COINSNAPEDD_PHP_VERSION')){ define( 'COINSNAPEDD_PHP_VERSION', '7.4' ); }
 if(!defined('COINSNAPEDD_WP_VERSION')){ define( 'COINSNAPEDD_WP_VERSION', '5.2' ); }
@@ -39,7 +39,8 @@ use Coinsnap\Client\Webhook;
 final class CoinsnapEDD {
     private static $_instance;
     public $gateway_id      = 'coinsnap';    
-    public const WEBHOOK_EVENTS = ['New','Expired','Settled','Processing'];	 
+    public const COINSNAP_WEBHOOK_EVENTS = ['New','Expired','Settled','Processing','Invalid'];
+    public const BTCPAY_WEBHOOK_EVENTS = ['InvoiceCreated','InvoiceExpired','InvoiceSettled','InvoiceProcessing','InvoiceInvalid']; 
     
     public function __construct(){
         
@@ -686,9 +687,22 @@ final class CoinsnapEDD {
                 $metadata = [];
     		$metadata['orderNumber'] = $payment_id;
                 $metadata['customerName'] = $buyerName;
+                
+                if($this->get_payment_provider() === 'btcpay') {
+                    $metadata['orderId'] = $payment_id;
+                }
+                
+                $camount = \Coinsnap\Util\PreciseNumber::parseFloat($amount,2);
+                
+                // Handle Sats-mode because BTCPay does not understand SAT as a currency we need to change to BTC and adjust the amount.
+                if ($currency === 'SATS' && $this->get_payment_provider() === 'btcpay') {
+                    $currency = 'BTC';
+                    $amountBTC = bcdiv($camount->__toString(), '100000000', 8);
+                    $camount = \Coinsnap\Util\PreciseNumber::parseString($amountBTC);
+                }
+            
                 $redirectAutomatically = (edd_get_option( 'coinsnap_autoredirect', '' ) > 0)? true : false;
                 $walletMessage = '';
-		$camount = \Coinsnap\Util\PreciseNumber::parseFloat($amount,2);
 		
                 $invoice = $client->createInvoice(
                     $this->getStoreId(),  
@@ -757,12 +771,11 @@ final class CoinsnapEDD {
             // Get headers and check for signature
             $headers = getallheaders();
             $signature = null; $payloadKey = null;
-            $_provider = ($this->get_payment_provider() === 'btcpay')? 'btcpay' : 'coinsnap';
                 
             foreach ($headers as $key => $value) {
-                if ((strtolower($key) === 'x-coinsnap-sig' && $_provider === 'coinsnap') || (strtolower($key) === 'btcpay-sig' && $_provider === 'btcpay')) {
-                        $signature = $value;
-                        $payloadKey = strtolower($key);
+                if (strtolower($key) === 'x-coinsnap-sig' || strtolower($key) === 'btcpay-sig') {
+                    $signature = $value;
+                    $payloadKey = strtolower($key);
                 }
             }
 
@@ -776,38 +789,54 @@ final class CoinsnapEDD {
             if (!Webhook::isIncomingWebhookRequestValid($rawPostData, $signature, $webhook['secret'])) {
                 wp_die('Invalid authentication signature', '', ['response' => 401]);
             }
+            
+            try{
+                // Parse the JSON payload
+                $postData = json_decode($rawPostData, false, 512, JSON_THROW_ON_ERROR);
 
-            // Parse the JSON payload
-            $postData = json_decode($rawPostData, false, 512, JSON_THROW_ON_ERROR);
+                if (!isset($postData->invoiceId)) {
+                    wp_die('No Coinsnap invoiceId provided', '', ['response' => 400]);
+                }
 
-            if (!isset($postData->invoiceId)) {
-                wp_die('No Coinsnap invoiceId provided', '', ['response' => 400]);
+                if(strpos($postData->invoiceId,'test_') !== false){
+                    wp_die('Successful webhook test', '', ['response' => 200]);
+                }
+
+                $invoice_id = esc_html($postData->invoiceId);
+
+                $client = new \Coinsnap\Client\Invoice( $this->getApiUrl(), $this->getApiKey() );			
+                $csinvoice = $client->getInvoice($this->getStoreId(), $invoice_id);
+                $status = $csinvoice->getData()['status'] ;
+                $order_id = ($this->get_payment_provider() === 'btcpay')? $csinvoice->getData()['metadata']['orderId'] : $csinvoice->getData()['orderId'];
+
+                $order_status = 'pending';
+                switch($status){
+                    case 'Expired':
+                    case 'InvoiceExpired':
+                        $order_status = edd_get_option('expired_status', '');
+                        break;
+                    
+                    case 'Processing':
+                    case 'InvoiceProcessing':
+                        $order_status = edd_get_option('processing_status', '');
+                        break;
+                    
+                    case 'Settled':
+                    case 'InvoiceSettled':
+                        $order_status = edd_get_option('settled_status', '');
+                        break;
+                }
+                
+                edd_update_payment_status( $order_id, $order_status );
+
+                echo "OK";
+                exit;
             }
-            
-            $invoice_id = esc_html($postData->invoiceId);
-            
-            if(strpos($invoice_id,'test_') !== false){
-                wp_die('Successful webhook test', '', ['response' => 200]);
+            catch (JsonException $e) {
+                wp_die('Invalid JSON payload', '', ['response' => 400]);
             }
-            
-            $client = new \Coinsnap\Client\Invoice( $this->getApiUrl(), $this->getApiKey() );			
-            $invoice = $client->getInvoice($this->getStoreId(), $invoice_id);
-            $status = $invoice->getData()['status'] ;
-            $order_id = $invoice->getData()['orderId'];
-            
-            $order_status = 'pending';
-            if ($status == 'Expired'){ $order_status = edd_get_option('expired_status', '');}
-            elseif ($status == 'Processing'){ $order_status = edd_get_option('processing_status', '');}
-            elseif ($status == 'Settled'){ $order_status = edd_get_option('settled_status', '');}
-
-            edd_update_payment_status( $order_id, $order_status );
-
-            echo "OK";
-            exit;
         }
-        catch (JsonException $e) {
-            wp_die('Invalid JSON payload', '', ['response' => 400]);
-        }
+        
         catch (\Throwable $e) {
             wp_die('Internal server error', '', ['response' => 500]);
         }
@@ -868,10 +897,11 @@ final class CoinsnapEDD {
     public function registerWebhook(string $apiUrl, $apiKey, $storeId){
         try {
             $whClient = new Webhook( $apiUrl, $apiKey );
+            $webhook_events = ($this->get_payment_provider() === 'btcpay')? self::BTCPAY_WEBHOOK_EVENTS : self::COINSNAP_WEBHOOK_EVENTS;
             $webhook = $whClient->createWebhook(
                 $storeId,   //$storeId
 		$this->get_webhook_url(), //$url
-		self::WEBHOOK_EVENTS,   //$specificEvents
+		$webhook_events,   //$specificEvents
 		null    //$secret
             );
 
