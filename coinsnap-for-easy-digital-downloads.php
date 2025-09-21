@@ -3,7 +3,7 @@
  * Plugin Name:     Bitcoin payment for Easy Digital Downloads
  * Plugin URI:      https://www.coinsnap.io
  * Description:     With this Bitcoin payment plugin for Easy Digital Downloads you can now offer downloads for Bitcoin right in the Easy Digital Downloads plugin!
- * Version:         1.1.0
+ * Version:         1.1.1
  * Author:          Coinsnap
  * Author URI:      https://coinsnap.io/
  * Text Domain:     coinsnap-for-easy-digital-downloads
@@ -12,7 +12,7 @@
  * Tested up to:    6.8
  * Requires at least: 5.2
  * Requires Plugins: easy-digital-downloads
- * EDD tested up to: 3.5.1
+ * EDD tested up to: 3.5.2
  * License:         GPL2
  * License URI:     https://www.gnu.org/licenses/gpl-2.0.html
  *
@@ -20,7 +20,7 @@
  */ 
 
 defined('ABSPATH') || exit;
-if(!defined('COINSNAPEDD_PLUGIN_VERSION')){ define( 'COINSNAPEDD_PLUGIN_VERSION', '1.1.0' ); }
+if(!defined('COINSNAPEDD_PLUGIN_VERSION')){ define( 'COINSNAPEDD_PLUGIN_VERSION', '1.1.1' ); }
 if(!defined('COINSNAPEDD_REFERRAL_CODE')){ define( 'COINSNAPEDD_REFERRAL_CODE', 'D18876' ); }
 if(!defined('COINSNAPEDD_PHP_VERSION')){ define( 'COINSNAPEDD_PHP_VERSION', '7.4' ); }
 if(!defined('COINSNAPEDD_WP_VERSION')){ define( 'COINSNAPEDD_WP_VERSION', '5.2' ); }
@@ -142,7 +142,7 @@ final class CoinsnapEDD {
     
     public function coinsnapConnectionHandler(){
         
-        $_nonce = filter_input(INPUT_POST,'_wpnonce',FILTER_SANITIZE_STRING);
+        $_nonce = filter_input(INPUT_POST,'_wpnonce',FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         
         if(empty($this->getApiUrl()) || empty($this->getApiKey())){
             $response = [
@@ -249,13 +249,13 @@ final class CoinsnapEDD {
      * Handles the BTCPay server AJAX callback from the settings form.
      */
     public function btcpayApiUrlHandler() {
-        $_nonce = filter_input(INPUT_POST,'apiNonce',FILTER_SANITIZE_STRING);
+        $_nonce = filter_input(INPUT_POST,'apiNonce',FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         if ( !wp_verify_nonce( $_nonce, 'coinsnapedd-ajax-nonce' ) ) {
             wp_die('Unauthorized!', '', ['response' => 401]);
         }
         
         if ( current_user_can( 'manage_options' ) ) {
-            $host = filter_var(filter_input(INPUT_POST,'host',FILTER_SANITIZE_STRING), FILTER_VALIDATE_URL);
+            $host = filter_var(filter_input(INPUT_POST,'host',FILTER_SANITIZE_FULL_SPECIAL_CHARS), FILTER_VALIDATE_URL);
 
             if ($host === false || (substr( $host, 0, 7 ) !== "http://" && substr( $host, 0, 8 ) !== "https://")) {
                 wp_send_json_error("Error validating BTCPayServer URL.");
@@ -695,8 +695,8 @@ final class CoinsnapEDD {
                 $camount = \Coinsnap\Util\PreciseNumber::parseFloat($amount,2);
                 
                 // Handle Sats-mode because BTCPay does not understand SAT as a currency we need to change to BTC and adjust the amount.
-                if ($currency === 'SATS' && $this->get_payment_provider() === 'btcpay') {
-                    $currency = 'BTC';
+                if (strtoupper($currency_code) === 'SATS' && $this->get_payment_provider() === 'btcpay') {
+                    $currency_code = 'BTC';
                     $amountBTC = bcdiv($camount->__toString(), '100000000', 8);
                     $camount = \Coinsnap\Util\PreciseNumber::parseString($amountBTC);
                 }
@@ -780,7 +780,7 @@ final class CoinsnapEDD {
             }
 
             // Handle missing or invalid signature
-            if (!isset($signature)) {
+            if ($signature === null) {
                 wp_die('Authentication required', '', ['response' => 401]);
             }
 
@@ -794,7 +794,7 @@ final class CoinsnapEDD {
                 // Parse the JSON payload
                 $postData = json_decode($rawPostData, false, 512, JSON_THROW_ON_ERROR);
 
-                if (!isset($postData->invoiceId)) {
+                if ($postData->invoiceId === null) {
                     wp_die('No Coinsnap invoiceId provided', '', ['response' => 400]);
                 }
 

@@ -193,4 +193,9 @@ Plugin's page on Coinsnap website: https://coinsnap.io/coinsnap-for-easy-digital
 * Updated BTCPay server minimum payment amount calculation system
 * Updated BTCPay server events and webhook payload handler
 * Update: added convertation from SATS to BTC for BTCPay server.
-* Compatibility with Easy Digital Downloads 3.5.11 is tested.
+* Compatibility with Easy Digital Downloads 3.5.1 is tested.
+
+= 1.1.1 :: 2025-09-21 =
+* Fixed: warnings in error log are handled
+* Updated webhook payload handler
+* Compatibility with Easy Digital Downloads 3.5.2 is tested.
