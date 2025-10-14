@@ -2,7 +2,7 @@
 Contributors: coinsnap
 Tags:  Coinsnap, Easy Digital Downloads, Bitcoin, Lightning 
 Tested up to: 6.8
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License:         GPL2
 License URI:     https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -195,7 +195,8 @@ Plugin's page on Coinsnap website: https://coinsnap.io/coinsnap-for-easy-digital
 * Update: added convertation from SATS to BTC for BTCPay server.
 * Compatibility with Easy Digital Downloads 3.5.1 is tested.
 
-= 1.1.1 :: 2025-09-21 =
-* Fixed: warnings in error log are handled
-* Updated webhook payload handler
-* Compatibility with Easy Digital Downloads 3.5.2 is tested.
+= 1.2.0 :: 2025-10-13 =
+* Update: Added non-supported by BTCPay server currencies handler on invoice request flow.
+* Update: Added custom redirect after payment page in module settings.
+
+

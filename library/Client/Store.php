@@ -54,6 +54,47 @@ class Store extends AbstractClient{
             throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), (int)esc_html($response->getStatus()), esc_html($response->getBody()));
         }
     }
+    
+    /**
+     * For BTCPay server only
+     * @return \Coinsnap\Result\Store[int $code, array $result]
+     */
+    public function getStoreCurrenciesRates($storeId, $currencies = ['EUR','USD']): \Coinsnap\Result\Store {
+        $url = $this->getApiUrl().COINSNAP_SERVER_PATH.'/' . urlencode($storeId) . '/rates?';
+        $headers = $this->getRequestHeaders();
+        $method = 'GET';
+        $currenciesArray = [];
+        
+        foreach($currencies as $currency){
+            $currenciesArray[] = 'currencyPair=BTC_'.$currency;
+        }
+        
+        $response = $this->getHttpClient()->request($method, $url.implode('&',$currenciesArray), $headers);
+        if ($response->getStatus() === 200) {
+
+            $json_decode = json_decode($response->getBody(), true, 512, JSON_INVALID_UTF8_IGNORE);
+
+            $result['currencies'] = [];
+            if(count($json_decode) > 0){
+                foreach($json_decode as $currency){
+                    if(empty($currency['errors'])){
+                        $result['currencies'][$currency["currencyPair"]] = $currency["rate"];
+                    } 
+                }
+            }
+            
+            if(count($result['currencies']) < 1) {
+                $result['error'] = 'NOT_LOADED';
+                $result['response'] = $response->getBody();
+                $result['url'] = $url;
+            }
+            
+            return new \Coinsnap\Result\Store(array('code' => $response->getStatus(), 'result' => $result));
+        }
+        else {
+            throw $this->getExceptionByStatusCode(esc_html($method), esc_url($url), (int)esc_html($response->getStatus()), esc_html($response->getBody()));
+        }
+    }
 
     /**
      * For BTCPay server only
@@ -67,33 +108,30 @@ class Store extends AbstractClient{
         $response = $this->getHttpClient()->request($method, $url, $headers);
         if ($response->getStatus() === 200) {
 
-            $json_decode = json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+            $json_decode = json_decode($response->getBody(), true, 512, JSON_INVALID_UTF8_IGNORE);
 
-            if(json_last_error() === JSON_ERROR_NONE){
-                $result = array('response' => $json_decode);
-                if(count($json_decode) > 0){
-                    $result['onchain'] = false;
-                    $result['lightning'] = false;
-                    $result['usdt'] = false;
-                    foreach($json_decode as $storePaymentMethod){
+            $result = array('response' => $json_decode);
+            if(count($json_decode) > 0){
+                    
+                $result['onchain'] = false;
+                $result['lightning'] = false;
+                $result['usdt'] = false;
+                    
+                foreach($json_decode as $storePaymentMethod){
                         
-                        //Logger::debug('Payment Method: '.$storePaymentMethod['paymentMethodId']);
-                        
-                        if($storePaymentMethod['enabled'] > 0 && stripos($storePaymentMethod['paymentMethodId'],'BTC') !== false){
-                            $result['onchain'] = true;
-                        }
-                        if($storePaymentMethod['enabled'] > 0 && ($storePaymentMethod['paymentMethodId'] === 'Lightning' || stripos($storePaymentMethod['paymentMethodId'],'-LN') !== false)) {
-                            $result['lightning'] = true;
-                        }
-                        if($storePaymentMethod['enabled'] > 0 && stripos($storePaymentMethod['paymentMethodId'],'USDT') !== false){
-                            $result['usdt'] = true;
-                        }
-                        
+                    if($storePaymentMethod['enabled'] > 0){
+                        $result['paymentmethods'][] = $storePaymentMethod['paymentMethodId'];
+                    }
+                    if($storePaymentMethod['enabled'] > 0 && stripos($storePaymentMethod['paymentMethodId'],'BTC') !== false){
+                        $result['onchain'] = true;
+                    }
+                    if($storePaymentMethod['enabled'] > 0 && ($storePaymentMethod['paymentMethodId'] === 'Lightning' || stripos($storePaymentMethod['paymentMethodId'],'-LN') !== false)) {
+                        $result['lightning'] = true;
+                    }
+                    if($storePaymentMethod['enabled'] > 0 && stripos($storePaymentMethod['paymentMethodId'],'USDT') !== false){
+                        $result['usdt'] = true;
                     }
                 }
-            }
-            else {
-                $result = array('error' => json_last_error());
             }
             return new \Coinsnap\Result\Store(array('code' => $response->getStatus(), 'result' => $result));
         }

@@ -3,7 +3,7 @@
  * Plugin Name:     Bitcoin payment for Easy Digital Downloads
  * Plugin URI:      https://www.coinsnap.io
  * Description:     With this Bitcoin payment plugin for Easy Digital Downloads you can now offer downloads for Bitcoin right in the Easy Digital Downloads plugin!
- * Version:         1.1.1
+ * Version:         1.2.0
  * Author:          Coinsnap
  * Author URI:      https://coinsnap.io/
  * Text Domain:     coinsnap-for-easy-digital-downloads
@@ -20,7 +20,7 @@
  */ 
 
 defined('ABSPATH') || exit;
-if(!defined('COINSNAPEDD_PLUGIN_VERSION')){ define( 'COINSNAPEDD_PLUGIN_VERSION', '1.1.1' ); }
+if(!defined('COINSNAPEDD_PLUGIN_VERSION')){ define( 'COINSNAPEDD_PLUGIN_VERSION', '1.2.0' ); }
 if(!defined('COINSNAPEDD_REFERRAL_CODE')){ define( 'COINSNAPEDD_REFERRAL_CODE', 'D18876' ); }
 if(!defined('COINSNAPEDD_PHP_VERSION')){ define( 'COINSNAPEDD_PHP_VERSION', '7.4' ); }
 if(!defined('COINSNAPEDD_WP_VERSION')){ define( 'COINSNAPEDD_WP_VERSION', '5.2' ); }
@@ -547,6 +547,13 @@ final class CoinsnapEDD {
                 'value' => 1,
                 'std' => 1
             ),
+            'coinsnap_returnurl' => array(
+                'id'   => 'coinsnap_returnurl',
+                'name' => __('Return URL after payment', 'coinsnap-for-easy-digital-downloads'),
+                'desc' => __('Custom return URL after successful payment (default URL if blank)', 'coinsnap-for-easy-digital-downloads'),
+                'type' => 'text',
+                'size' => 'regular',
+            ),
             'expired_status' => array(
                 'id'   => 'expired_status',
                 'name'       => __( 'Expired Status', 'coinsnap-for-easy-digital-downloads' ),
@@ -672,15 +679,15 @@ final class CoinsnapEDD {
         
         else {            
             $amount = round($purchase_data['price'], 2);
-            $currency_code = edd_get_currency();
+            $currency = strtoupper(edd_get_currency());
             
-            $client =new \Coinsnap\Client\Invoice($this->getApiUrl(), $this->getApiKey());
+            $client = new \Coinsnap\Client\Invoice($this->getApiUrl(), $this->getApiKey());
             
-            $checkInvoice = $this->coinsnapedd_amount_validation($amount,strtoupper($currency_code));
+            $checkInvoice = $this->coinsnapedd_amount_validation($amount,$currency);
                 
             if($checkInvoice['result'] === true){
             
-		$redirectUrl = edd_get_success_page_uri();
+		$redirectUrl = (!empty(edd_get_option('coinsnap_returnurl')))? edd_get_option('coinsnap_returnurl') : edd_get_success_page_uri();
                 $buyerEmail = isset($purchase_data['user_email']) ? $purchase_data['user_email'] : $purchase_data['user_info']['email'];
 		$buyerName =  $purchase_data['user_info']['first_name'] . ' ' . $purchase_data['user_info']['last_name'];
 		    		
@@ -692,21 +699,38 @@ final class CoinsnapEDD {
                     $metadata['orderId'] = $payment_id;
                 }
                 
-                $camount = \Coinsnap\Util\PreciseNumber::parseFloat($amount,2);
-                
-                // Handle Sats-mode because BTCPay does not understand SAT as a currency we need to change to BTC and adjust the amount.
-                if (strtoupper($currency_code) === 'SATS' && $this->get_payment_provider() === 'btcpay') {
-                    $currency_code = 'BTC';
-                    $amountBTC = bcdiv($camount->__toString(), '100000000', 8);
-                    $camount = \Coinsnap\Util\PreciseNumber::parseString($amountBTC);
+                if($this->get_payment_provider() === 'btcpay' && $currency !== 'BTC'){
+                    $store = new \Coinsnap\Client\Store($this->getApiUrl(), $this->getApiKey());
+                    $btcpayCurrencies = $store -> getStoreCurrenciesRates($this->getStoreId(),array($currency));
+                    $isCurrency = true;
+                    if(!isset($btcpayCurrencies['result']['error']) && count($btcpayCurrencies['result']['currencies'])>0){
+                        if(!isset($btcpayCurrencies['result']['currencies']['BTC_'.$currency])){
+                            $isCurrency = false;
+                        }
+                    }
+                    else {
+                        $isCurrency = false;
+                    }
+                    
+                    // Handle currencies non-supported by BTCPay Server, we need to change them BTC and adjust the amount.
+                    if( !$isCurrency ){
+                        $currency = 'BTC';
+                        $rate = 1/$checkInvoice['rate'];
+                        $amountBTC = bcdiv(strval($amount), strval($rate), 8);
+                        $amount = (float)$amountBTC;
+                        
+                        edd_record_gateway_error(esc_html__('Currency error', 'coinsnap-for-easy-digital-downloads'), json_encode($btcpayCurrencies['result']), $payment_id);
+                    }
                 }
+                
+                $camount = ($currency === 'BTC')? \Coinsnap\Util\PreciseNumber::parseFloat($amount,8) : \Coinsnap\Util\PreciseNumber::parseFloat($amount,2);
             
                 $redirectAutomatically = (edd_get_option( 'coinsnap_autoredirect', '' ) > 0)? true : false;
                 $walletMessage = '';
 		
                 $invoice = $client->createInvoice(
                     $this->getStoreId(),  
-                    $currency_code,
+                    $currency,
                     $camount,
                     $payment_id,
                     $buyerEmail,
@@ -739,12 +763,12 @@ final class CoinsnapEDD {
                 if($checkInvoice['error'] === 'currencyError'){
                     $errorMessage = sprintf( 
                     /* translators: 1: Currency */
-                    __( 'Currency %1$s is not supported by Coinsnap', 'coinsnap-for-easy-digital-downloads' ), strtoupper( $currency_code ));
+                    __( 'Currency %1$s is not supported by Coinsnap', 'coinsnap-for-easy-digital-downloads' ), strtoupper( $currency ));
                 }      
                 elseif($checkInvoice['error'] === 'amountError'){
                     $errorMessage = sprintf( 
                     /* translators: 1: Amount, 2: Currency */
-                    __( 'Invoice amount cannot be less than %1$s %2$s', 'coinsnap-for-easy-digital-downloads' ), $checkInvoice['min_value'], strtoupper( $currency_code ));
+                    __( 'Invoice amount cannot be less than %1$s %2$s', 'coinsnap-for-easy-digital-downloads' ), $checkInvoice['min_value'], strtoupper( $currency ));
                 }
                 else {
                     $errorMessage = $checkInvoice['error'];
