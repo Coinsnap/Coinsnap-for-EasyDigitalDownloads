@@ -87,7 +87,7 @@ final class CoinsnapEDD {
             if (count($client->getStores()) < 1) {
                 $messageAbort = __('Error on verifiying redirected API Key with stored BTCPay Server url. Aborting API wizard. Please try again or continue with manual setup.', 'coinsnap-for-easy-digital-downloads');
                 $notice->addNotice('error', $messageAbort);
-                wp_safe_redirect($CoinsnapBTCPaySettingsUrl);
+                wp_redirect($CoinsnapBTCPaySettingsUrl);
             }
 
             // Data does get submitted with url-encoded payload, so parse $_POST here.
@@ -124,18 +124,18 @@ final class CoinsnapEDD {
                         $messageWebhookError = __( 'Could not register a new webhook on the store.', 'coinsnap-for-easy-digital-downloads' );
                         $notice->addNotice('error', $messageWebhookError );
                     }
-                    wp_safe_redirect($CoinsnapBTCPaySettingsUrl);
+                    wp_redirect($CoinsnapBTCPaySettingsUrl);
                     exit();
                 }
                 else {
                     $notice->addNotice('error', __('Please make sure you only select one store on the BTCPay API authorization page.', 'coinsnap-for-easy-digital-downloads'));
-                    wp_safe_redirect($CoinsnapBTCPaySettingsUrl);
+                    wp_redirect($CoinsnapBTCPaySettingsUrl);
                     exit();
                 }
             }
 
             $notice->addNotice('error', __('Error processing the data from Coinsnap. Please try again.', 'coinsnap-for-easy-digital-downloads'));
-            wp_safe_redirect($CoinsnapBTCPaySettingsUrl);
+            wp_redirect($CoinsnapBTCPaySettingsUrl);
         });
     }
     
@@ -657,8 +657,13 @@ final class CoinsnapEDD {
             'gateway'       => 'coinsnap',
             'status'        => ! empty($purchase_data['buy_now']) ? 'private' : 'pending'
         );
+        
+        
+        
 
         $payment_id = edd_insert_payment($payment_data);
+        
+        
         
         if (! $payment_id) {
             $errorMessage = sprintf(
@@ -677,7 +682,7 @@ final class CoinsnapEDD {
             
             $checkInvoice = $this->coinsnapedd_amount_validation($amount,$currency);
                 
-            if($checkInvoice['result'] === true){
+            if($checkInvoice['result']){
             
 		$redirectUrl = (!empty(edd_get_option('coinsnap_returnurl')))? edd_get_option('coinsnap_returnurl') : edd_get_success_page_uri();
                 $buyerEmail = isset($purchase_data['user_email']) ? $purchase_data['user_email'] : $purchase_data['user_info']['email'];
@@ -733,11 +738,11 @@ final class CoinsnapEDD {
                     $redirectAutomatically,
                     $walletMessage
 		);
-		
-    		$payurl = $invoice->getData()['checkoutLink'] ;	
-
+                
+                $payurl = $invoice->getData()['checkoutLink'] ;	
+                
                 if($payurl) {	                                
-                     wp_safe_redirect($payurl);
+                     wp_redirect($payurl);
                      exit;
                 }
                 
