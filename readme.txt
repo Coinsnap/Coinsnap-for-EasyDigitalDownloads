@@ -2,7 +2,7 @@
 Contributors: coinsnap
 Tags:  Coinsnap, Easy Digital Downloads, Bitcoin, Lightning 
 Tested up to: 6.8
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License:         GPL2
 License URI:     https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -199,4 +199,10 @@ Plugin's page on Coinsnap website: https://coinsnap.io/coinsnap-for-easy-digital
 * Update: Added non-supported by BTCPay server currencies handler on invoice request flow.
 * Update: Added custom redirect after payment page in module settings.
 
+= 1.3.0 :: 2025-11-26 =
+* Update: Added Easy Digital Downloads Pro support.
+* Updated \Coinsnap\Client\Store class
+* Updated \Coinsnap\Client\Store::getStore() method data usage
+* Compatibility with Easy Digital Downloads 3.6.1.1 is tested.
+* Compatibility with Easy Digital Downloads Pro 3.3.5.2 is tested.
 

@@ -8,7 +8,7 @@
 * Contributors: coinsnap
 * Tags: Lightning, Lightning Payment, SATS, Satoshi sats, bitcoin, Wordpress, Easy Digital Downloads, payment gateway, accept bitcoin, bitcoin plugin, bitcoin payment processor, bitcoin e-commerce, Lightning Network, cryptocurrency, lightning payment processor
 * Tested up to: 6.8
-* Stable tag: 1.2.0
+* Stable tag: 1.3.0
 * License:         GPL2
 * License URI:     https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -221,3 +221,11 @@ The Bitcoin + Lightning payment page is now displayed, offering the payer the op
 #### 1.2.0 :: 2025-10-13
 * Update: Added non-supported by BTCPay server currencies handler on invoice request flow.
 * Update: Added custom redirect after payment page in module settings.
+
+#### 1.3.0 :: 2025-11-26
+* Update: Added Easy Digital Downloads Pro support.
+* Updated \Coinsnap\Client\Store class
+* Updated \Coinsnap\Client\Store::getStore() method data usage
+* Compatibility with Easy Digital Downloads 3.6.1.1 is tested.
+* Compatibility with Easy Digital Downloads Pro 3.3.5.2 is tested.
+
