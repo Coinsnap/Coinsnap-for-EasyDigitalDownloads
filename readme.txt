@@ -1,8 +1,8 @@
 === Bitcoin payment for Easy Digital Downloads ===
 Contributors: coinsnap
 Tags:  Coinsnap, Easy Digital Downloads, Bitcoin, Lightning 
-Tested up to: 6.8
-Stable tag: 1.3.0
+Tested up to: 6.9
+Stable tag: 1.3.1
 License:         GPL2
 License URI:     https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,18 +53,18 @@ Coinsnap’s Bitcoin payment add-on for Easy Digital Downloads makes it amazingl
 
 == More information: ==
 
-* Demo Store: [https://coinsnap.io/downloads/coinsnap-flyer/](https://coinsnap.io/downloads/coinsnap-flyer/)
-* Product page: [https://coinsnap.io/coinsnap-for-easy-digital-downloads/](https://coinsnap.io/coinsnap-for-easy-digital-downloads/)
-* Installation Guide: [https://coinsnap.io/easy-digital-downloads-installation-guide/](https://coinsnap.io/easy-digital-downloads-installation-guide/) 
+* Demo Store: [https://easydigitaldownloads.coinsnap.org/](https://easydigitaldownloads.coinsnap.org/)
+* Product page: [https://coinsnap.io/modules/easy-digital-downloads/](https://coinsnap.io/modules/easy-digital-downloads/)
+* Installation Guide: [https://coinsnap.io/modules/easy-digital-downloads/easy-digital-downloads-installation-guide/](https://coinsnap.io/modules/easy-digital-downloads/easy-digital-downloads-installation-guide/) 
 * Github plugin page: [https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads](https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads)
 
 
 == Documentation: ==
 
 * [Coinsnap API (1.0) documentation](https://docs.coinsnap.io/)
-* [Frequently Asked Questions](https://coinsnap.io/faq/) 
-* [Terms and Conditions](https://coinsnap.io/general-terms-and-conditions/)
-* [Privacy Policy](https://coinsnap.io/privacy/)
+* [Frequently Asked Questions](https://coinsnap.io/help/coinsnap-faq/) 
+* [Terms and Conditions](https://coinsnap.io/info/general-terms-and-conditions/)
+* [Privacy Policy](https://coinsnap.io/info/privacy-policy/)
 
 
 == Installation ==
@@ -206,3 +206,5 @@ Plugin's page on Coinsnap website: https://coinsnap.io/coinsnap-for-easy-digital
 * Compatibility with Easy Digital Downloads 3.6.1.1 is tested.
 * Compatibility with Easy Digital Downloads Pro 3.3.5.2 is tested.
 
+= 1.3.1 :: 2025-12-04 =
+* Compatibility with Wordpress 6.9 is tested.
