@@ -88,6 +88,7 @@ final class CoinsnapEDD {
                 $messageAbort = __('Error on verifiying redirected API Key with stored BTCPay Server url. Aborting API wizard. Please try again or continue with manual setup.', 'coinsnap-for-easy-digital-downloads');
                 $notice->addNotice('error', $messageAbort);
                 wp_redirect($CoinsnapBTCPaySettingsUrl);
+                exit();
             }
 
             // Data does get submitted with url-encoded payload, so parse $_POST here.
@@ -136,6 +137,7 @@ final class CoinsnapEDD {
 
             $notice->addNotice('error', __('Error processing the data from Coinsnap. Please try again.', 'coinsnap-for-easy-digital-downloads'));
             wp_redirect($CoinsnapBTCPaySettingsUrl);
+            exit();
         });
     }
     
