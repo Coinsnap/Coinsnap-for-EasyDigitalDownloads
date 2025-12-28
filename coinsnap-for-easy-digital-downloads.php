@@ -3,7 +3,7 @@
  * Plugin Name:     Bitcoin payment for Easy Digital Downloads
  * Plugin URI:      https://www.coinsnap.io
  * Description:     With this Bitcoin payment plugin for Easy Digital Downloads you can now offer downloads for Bitcoin right in the Easy Digital Downloads plugin!
- * Version:         1.3.1
+ * Version:         1.3.2
  * Author:          Coinsnap
  * Author URI:      https://coinsnap.io/
  * Text Domain:     coinsnap-for-easy-digital-downloads
@@ -11,7 +11,7 @@
  * Requires PHP:    7.4
  * Tested up to:    6.9
  * Requires at least: 5.2
- * EDD tested up to: 3.6.1.1
+ * EDD tested up to: 3.6.3
  * EDD Pro tested up to: 3.3.5.2
  * License:         GPL2
  * License URI:     https://www.gnu.org/licenses/gpl-2.0.html
@@ -20,7 +20,7 @@
  */ 
 
 defined('ABSPATH') || exit;
-if(!defined('COINSNAPEDD_PLUGIN_VERSION')){ define( 'COINSNAPEDD_PLUGIN_VERSION', '1.3.1' ); }
+if(!defined('COINSNAPEDD_PLUGIN_VERSION')){ define( 'COINSNAPEDD_PLUGIN_VERSION', '1.3.2' ); }
 if(!defined('COINSNAPEDD_REFERRAL_CODE')){ define( 'COINSNAPEDD_REFERRAL_CODE', 'D18876' ); }
 if(!defined('COINSNAPEDD_PHP_VERSION')){ define( 'COINSNAPEDD_PHP_VERSION', '7.4' ); }
 if(!defined('COINSNAPEDD_WP_VERSION')){ define( 'COINSNAPEDD_WP_VERSION', '5.2' ); }
