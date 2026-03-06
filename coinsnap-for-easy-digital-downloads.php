@@ -1,9 +1,9 @@
 <?php
 /*
  * Plugin Name:     Bitcoin payment for Easy Digital Downloads
- * Plugin URI:      https://www.coinsnap.io
+ * Plugin URI:      https://coinsnap.io/wp-add-ons/easy-digital-downloads/
  * Description:     With this Bitcoin payment plugin for Easy Digital Downloads you can now offer downloads for Bitcoin right in the Easy Digital Downloads plugin!
- * Version:         1.3.2
+ * Version:         1.3.3
  * Author:          Coinsnap
  * Author URI:      https://coinsnap.io/
  * Text Domain:     coinsnap-for-easy-digital-downloads
@@ -11,7 +11,7 @@
  * Requires PHP:    7.4
  * Tested up to:    6.9
  * Requires at least: 5.2
- * EDD tested up to: 3.6.3
+ * EDD tested up to: 3.6.5
  * EDD Pro tested up to: 3.3.5.2
  * License:         GPL2
  * License URI:     https://www.gnu.org/licenses/gpl-2.0.html
@@ -20,7 +20,7 @@
  */ 
 
 defined('ABSPATH') || exit;
-if(!defined('COINSNAPEDD_PLUGIN_VERSION')){ define( 'COINSNAPEDD_PLUGIN_VERSION', '1.3.2' ); }
+if(!defined('COINSNAPEDD_PLUGIN_VERSION')){ define( 'COINSNAPEDD_PLUGIN_VERSION', '1.3.3' ); }
 if(!defined('COINSNAPEDD_REFERRAL_CODE')){ define( 'COINSNAPEDD_REFERRAL_CODE', 'D18876' ); }
 if(!defined('COINSNAPEDD_PHP_VERSION')){ define( 'COINSNAPEDD_PHP_VERSION', '7.4' ); }
 if(!defined('COINSNAPEDD_WP_VERSION')){ define( 'COINSNAPEDD_WP_VERSION', '5.2' ); }
@@ -29,10 +29,7 @@ if(!defined('COINSNAP_API_PATH')){define( 'COINSNAP_API_PATH', '/api/v1/');}
 if(!defined('COINSNAP_SERVER_PATH')){define( 'COINSNAP_SERVER_PATH', 'stores' );}
 if(!defined('COINSNAP_CURRENCIES')){define( 'COINSNAP_CURRENCIES', array("EUR","USD","SATS","BTC","CAD","JPY","GBP","CHF","RUB") );}
 
-
-
 require_once(dirname(__FILE__) . "/library/loader.php");
-
 use Coinsnap\Client\Webhook;
 
 final class CoinsnapEDD {
@@ -53,9 +50,9 @@ final class CoinsnapEDD {
             add_filter('edd_settings_gateways', array( $this, 'settings_gateways' ), 1, 1);
             add_filter('edd_gateway_settings_url_coinsnap', array( $this, 'edd_gateway_settings_url' ), 1, 1);
             add_action('admin_notices', array($this, 'coinsnap_notice'));
-            add_action( 'admin_enqueue_scripts', [$this, 'enqueueAdminScripts'] );
-            add_action( 'wp_ajax_coinsnapedd_connection_handler', [$this, 'coinsnapConnectionHandler'] );
-            add_action( 'wp_ajax_coinsnapedd_btcpay_server_apiurl_handler', [$this, 'btcpayApiUrlHandler']);
+            add_action('admin_enqueue_scripts', [$this, 'enqueueAdminScripts'] );
+            add_action('wp_ajax_coinsnapedd_connection_handler', [$this, 'coinsnapConnectionHandler'] );
+            add_action('wp_ajax_coinsnapedd_btcpay_server_apiurl_handler', [$this, 'btcpayApiUrlHandler']);
         }
         
 	add_action('edd_coinsnap_cc_form', '__return_false');        	
@@ -436,10 +433,10 @@ final class CoinsnapEDD {
    
     public function register_gateway($gateways){
         $gateways[$this->gateway_id] = array(
-                'admin_label'    => __('Coinsnap', 'coinsnap-for-easy-digital-downloads'),
-                'checkout_label' => __('Bitcoin + Lightning', 'coinsnap-for-easy-digital-downloads'),
-                'supports'       => array( 'buy_now' )
-            );
+            'admin_label'    => __('Coinsnap', 'coinsnap-for-easy-digital-downloads'),
+            'checkout_label' => __('Bitcoin + Lightning', 'coinsnap-for-easy-digital-downloads'),
+            'supports'       => array('buy_now')
+        );
 
         return $gateways;
     }
@@ -505,14 +502,14 @@ final class CoinsnapEDD {
             
             //  BTCPay fields
             'btcpay_server_url' => array(
-                    'id' => 'btcpay_server_url',
-                    'name'       => __( 'BTCPay server URL*', 'coinsnap-for-easy-digital-downloads' ),
-                    'type'        => 'text',
-                    'desc'        => __( '<a href="#" class="btcpay-apikey-link">Check connection</a>', 'coinsnap-for-easy-digital-downloads' ).'<br/><br/><button class="button btcpay-apikey-link" type="button" id="pmpro_btcpay_wizard_button" target="_blank">'. __('Generate API key','coinsnap-for-easy-digital-downloads').'</button>',
-                    'std'     => '',
+                'id' => 'btcpay_server_url',
+                'name'       => __( 'BTCPay server URL*', 'coinsnap-for-easy-digital-downloads' ),
+                'type'        => 'text',
+                'desc'        => __( '<a href="#" class="btcpay-apikey-link">Check connection</a>', 'coinsnap-for-easy-digital-downloads' ).'<br/><br/><button class="button btcpay-apikey-link" type="button" id="pmpro_btcpay_wizard_button" target="_blank">'. __('Generate API key','coinsnap-for-easy-digital-downloads').'</button>',
+                'std'     => '',
                 'size' => 'regular',
-                    'class' => 'btcpay'
-                ),
+                'class' => 'btcpay'
+            ),
             
             'btcpay_store_id' => array(
                     'id'   => 'btcpay_store_id',
