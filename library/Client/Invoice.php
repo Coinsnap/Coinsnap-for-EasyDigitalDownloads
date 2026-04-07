@@ -29,16 +29,30 @@ class Invoice extends AbstractClient{
      */
     public function loadExchangeRates(): array {
         $url = 'https://api.coingecko.com/api/v3/exchange_rates';
-        $headers = [];
+        $headers = [
+            'Host' => 'api.coingecko.com',
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:148.0) Gecko/20100101 Firefox/148.0',
+            'Accept:' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language' => 'en-US,en;q=0.9',
+            'Accept-Encoding' => 'gzip, deflate, br, zstd',
+            'Connection' => 'keep-alive',
+            'Priority' => 'u=0, i',
+        ];
         $method = 'GET';
-        $response = $this->getHttpClient()->request($method, $url, $headers);
+        $code = 1000;
         
-        if ($response->getStatus() === 200) {
-            $body = json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        while($code > 399){
+            if($code !== 1000){ sleep(2); }
+            $response = $this->getHttpClient()->request($method, $url, $headers);
+            $code = (int)$response->getStatus();
         }
+        
+        $body = json_decode($response->getBody(), true, 512, JSON_THROW_ON_ERROR);        
+        /*
+        if ((int)$response->getStatus() < 400) {}
         else {
-            return array('result' => false, 'error' => 'ratesLoadingError');
-        }
+            return array('result' => false, 'error' => 'ratesLoadingError ('.(int)$response->getStatus().')');
+        }*/
         
         if (count($body)<1 || !isset($body['rates'])){
             return array('result' => false, 'error' => 'ratesListError');
@@ -49,7 +63,13 @@ class Invoice extends AbstractClient{
     
     public function checkPaymentData($amount,$currency,$provider = 'coinsnap',$mode = 'invoice'): array {
         
-        $btcPayCurrencies = $this->loadExchangeRates();
+        if(defined('COINSNAP_CURRENCY_RATES')){
+            $btcPayCurrencies = COINSNAP_CURRENCY_RATES;
+        }
+        else {
+            $btcPayCurrencies = $this->loadExchangeRates();
+            define('COINSNAP_CURRENCY_RATES',$btcPayCurrencies);
+        }
             
         if(!$btcPayCurrencies['result']){
                 return array('result' => false,'error' => $btcPayCurrencies['error'],'min_value' => '');
