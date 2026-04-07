@@ -2,7 +2,7 @@
 Contributors: coinsnap
 Tags:  Coinsnap, Easy Digital Downloads, Bitcoin, Lightning 
 Tested up to: 6.9
-Stable tag: 1.3.3
+Stable tag: 1.3.4
 License:         GPL2
 License URI:     https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -213,6 +213,11 @@ Plugin's page on Coinsnap website: https://coinsnap.io/coinsnap-for-easy-digital
 * Compatibility with Easy Digital Downloads 3.6.3 is tested.
 * Updated PHP files protection
 
-= 1.3.3 :: 2025-03-06 =
+= 1.3.3 :: 2026-03-06 =
 * Compatibility with Easy Digital Downloads 3.6.4 - 3.6.5 is tested.
 * Updated graphic files
+
+= 1.3.4 :: 2026-04-07 =
+* Updated \Coinsnap\Client\Invoice class.
+* Compatibility with Easy Digital Downloads 3.6.6.1 is tested.
+* Compatibility with Wordpress 6.9.4 is tested.
