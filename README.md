@@ -7,16 +7,16 @@
 
 * Contributors: coinsnap
 * Tags: Lightning, Lightning Payment, SATS, Satoshi sats, bitcoin, Wordpress, Easy Digital Downloads, payment gateway, accept bitcoin, bitcoin plugin, bitcoin payment processor, bitcoin e-commerce, Lightning Network, cryptocurrency, lightning payment processor
-* Tested up to: 6.9
-* Stable tag: 1.3.4
+* Tested up to: 7.0
+* Stable tag: 1.3.5
 * License:         GPL2
 * License URI:     https://www.gnu.org/licenses/gpl-2.0.html
 
 With this Bitcoin payment plugin for Easy Digital Downloads you can now offer downloads for Bitcoin right in the Easy Digital Downloads plugin!
 
 * Demo Store: [https://easydigitaldownloads.coinsnap.org/](https://easydigitaldownloads.coinsnap.org/)
-* Product page: [https://coinsnap.io/modules/easy-digital-downloads/](https://coinsnap.io/modules/easy-digital-downloads/)
-* Installation Guide: [https://coinsnap.io/modules/easy-digital-downloads/easy-digital-downloads-installation-guide/](https://coinsnap.io/modules/easy-digital-downloads/easy-digital-downloads-installation-guide/) 
+* Product page: [https://coinsnap.io/wp-add-ons/easy-digital-downloads/](https://coinsnap.io/wp-add-ons/easy-digital-downloads/)
+* Installation Guide: https://coinsnap.io/user-guides/easy-digital-downloads-bitcoin-user-guide/](https://coinsnap.io/user-guides/easy-digital-downloads-bitcoin-user-guide/)  
 * Github plugin page: [https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads](https://github.com/Coinsnap/Coinsnap-for-EasyDigitalDownloads)
 * WordPress: [https://wordpress.org/plugins/coinsnap-for-easy-digital-downloads/](https://wordpress.org/plugins/coinsnap-for-easy-digital-downloads/)
 
@@ -87,7 +87,7 @@ Simply register on [Coinsnap](https://app.coinsnap.io/register), enter your own 
 
 * [Coinsnap API (1.0) documentation](https://docs.coinsnap.io/)
 * [Frequently Asked Questions](https://coinsnap.io/help/coinsnap-faq/) 
-* [Terms and Conditions](https://coinsnap.io/info/general-terms-and-conditions/)
+* [Terms of Service](https://coinsnap.io/info/terms-of-service/)
 * [Privacy Policy](https://coinsnap.io/info/privacy-policy/)
 
 
@@ -143,7 +143,7 @@ If you don’t have a Coinsnap account yet, you can do so via the link shown: Co
 
 ![Coinsnap register](https://resources.coinsnap.org/products/easydigitaldownloads/images/8.png)
 
-Now go to the Coinsnap website at: https://app.coinsnap.io/register and open an account by entering your email address and a password of your choice.
+Now go to the Coinsnap website at: [https://app.coinsnap.io/](https://app.coinsnap.io/) and open an account by entering your email address and a password of your choice.
 
 If you are using a Lightning Wallet with Lightning Login, then you can also open a Coinsnap account with it.
 
@@ -168,7 +168,7 @@ A Lightning address is similar to an e-mail address. Lightning payments are forw
 ![Connect website with Coinsnap](https://resources.coinsnap.org/products/easydigitaldownloads/images/10.png)
 
 For more information on Lightning addresses and the corresponding Lightning wallet providers, click here:
-https://coinsnap.io/lightning-wallet-mit-lightning-adresse/
+[https://coinsnap.io/blog/how-do-i-get-a-lightning-wallet/](https://coinsnap.io/blog/how-do-i-get-a-lightning-wallet/)
 
 ### 3. Connect Coinsnap account with Easy Digital Downloads plug-in ###
 
@@ -245,3 +245,7 @@ The Bitcoin + Lightning payment page is now displayed, offering the payer the op
 * Updated \Coinsnap\Client\Invoice class.
 * Compatibility with Easy Digital Downloads 3.6.6.1 is tested.
 * Compatibility with Wordpress 6.9.4 is tested.
+
+#### 1.3.5 :: 2026-05-24
+* Compatibility with Easy Digital Downloads 3.6.8 is tested.
+* Compatibility with Wordpress 7.0 is tested.
