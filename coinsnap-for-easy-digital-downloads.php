@@ -150,6 +150,10 @@ final class CoinsnapEDD {
     public function coinsnapConnectionHandler(){
         
         $_nonce = filter_input(INPUT_POST,'_wpnonce',FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        // Before any API call: it can re-register the webhook and replace its secret.
+        if (!wp_verify_nonce((string) $_nonce, 'coinsnapedd-ajax-nonce') || !current_user_can('manage_shop_settings')) {
+            wp_send_json_error(['message' => 'Not allowed'], 403);
+        }
         
         if(empty($this->getApiUrl()) || empty($this->getApiKey())){
             $response = [
