@@ -12,7 +12,7 @@ class Notice {
         $notice_types_array = ['error','warning','success','info'];
         if(in_array($type,$notice_types_array)){ $type = 'info'; }
         if(!empty($content)){
-            setcookie('coinsnap_notices['.hash('sha256',$content).']',serialize(['type' => $type,'message' => $content, 'dismissible' => $dismissible]),time()+5,'/');
+            setcookie('coinsnap_notices['.hash('sha256',$content).']',wp_json_encode(['type' => $type,'message' => $content, 'dismissible' => $dismissible]),time()+5,'/');
         }
     }
     
@@ -22,7 +22,11 @@ class Notice {
         
             if(count($coinsnap_notices_array)>0){
                 foreach($coinsnap_notices_array as $coinsnap_notice){
-                    $notice = unserialize($coinsnap_notice);
+                    // JSON, never unserialize(): the cookie is set by the browser.
+                    $notice = json_decode((string) $coinsnap_notice, true);
+                    if (!is_array($notice) || !is_string($notice['type'] ?? null) || !is_string($notice['message'] ?? null)) {
+                        continue;
+                    }
                     $dismissible_add = ($notice['dismissible'])? ' is-dismissible' : '';
                     echo '<div class="notice notice-'.esc_html($notice['type'].$dismissible_add).'"><p>'.esc_html($notice['message']).'</p></div>';
                 }
