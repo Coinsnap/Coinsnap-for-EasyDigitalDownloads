@@ -255,6 +255,7 @@ Coinsnap charges a 1% transaction fee.
 - Security: The BTCPay Server setup callback only accepts a one-time code issued to a shop manager. Before, anyone could post an API key and switch the shop to their own BTCPay store.
 - Security: The API key fields no longer show the saved key; leave them empty to keep it. A BTCPay key is not kept when the server URL changes.
 - Security: Payment server error details and customer data are no longer shown at checkout or in admin notices.
+- Security: The library no longer sends an Access-Control-Allow-Origin: * header on every page that loads it, and API error replies are no longer copied into error messages.
 - Fix: A payment server outage no longer deletes and re-registers the webhook, and a failed webhook registration no longer causes a fatal error at checkout.
 - Fix: The exchange rate lookup gives up after 3 tries instead of retrying forever.
 
