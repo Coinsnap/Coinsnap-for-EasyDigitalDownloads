@@ -84,8 +84,8 @@ final class CoinsnapEDD {
             if ($state !== '') {
                 delete_transient($stateKey);
             }
-            $btcpay_server_url = (string) edd_get_option('btcpay_server_url');
-            if ($stateHost === false || $stateHost !== $btcpay_server_url) {
+            $btcpay_server_url = is_string($stateHost) ? $stateHost : '';
+            if ($btcpay_server_url === '') {
                 status_header(403);
                 exit();
             }
@@ -114,6 +114,7 @@ final class CoinsnapEDD {
                 $apiData = new \Coinsnap\Client\BTCPayApiAuthorization($data);
                 if ($apiData->hasSingleStore() && $apiData->hasRequiredPermissions()) {
 
+                    edd_update_option( 'btcpay_server_url', $btcpay_server_url);
                     edd_update_option( 'btcpay_api_key', $apiData->getApiKey());
                     edd_update_option( 'btcpay_store_id', $apiData->getStoreID());
                     edd_update_option( 'coinsnap_provider', 'btcpay');
@@ -293,8 +294,7 @@ final class CoinsnapEDD {
                     null
 		);
 
-		// Store the host to options before we leave the site.
-		edd_update_option('btcpay_server_url', $host);
+		// The host is saved only by the callback, once a key for it is verified; the stored key never goes to an unverified host.
 
 		// Return the redirect url.
 		wp_send_json_success(['url' => $url]);
