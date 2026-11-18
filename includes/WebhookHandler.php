@@ -12,11 +12,20 @@ class WebhookHandler
     private const FINAL = ['complete', 'publish', 'refunded', 'partially_refunded', 'revoked'];
     private const OPEN = ['pending', 'processing', 'private'];
 
-    public function __construct(
-        private string $provider,
-        private string $secret,
-        private array $statuses
-    ) {
+    // Invoices created before 1.4.0 have no record on the payment; they are accepted for this long after the upgrade.
+    public const LEGACY_WINDOW_SECONDS = 86400;
+    public const RECORDS_SINCE_OPTION = 'coinsnapedd_records_since';
+    public const PAID_META = '_coinsnap_paid_invoice';
+
+    private $provider;
+    private $secret;
+    private $statuses;
+
+    public function __construct(string $provider, string $secret, array $statuses)
+    {
+        $this->provider = $provider;
+        $this->secret = $secret;
+        $this->statuses = $statuses;
     }
 
     public function handle(string $rawBody, string $signatureHeader, int $nowSeconds): int
@@ -60,16 +69,22 @@ class WebhookHandler
             return 200;
         }
 
-        $recorded = $payment['invoices'];
-        if (is_array($recorded) && $recorded !== [] && !isset($recorded[$invoiceId])) {
-            $this->logSecurity('invoice not created for this payment', $invoiceId);
+        $recorded = is_array($payment['invoices']) ? $payment['invoices'] : [];
+        if (isset($recorded[$invoiceId]) && is_array($recorded[$invoiceId])) {
+            $expected = $recorded[$invoiceId];
+        }
+        elseif ($recorded === [] && $this->legacyAllowed($payment, $nowSeconds)) {
+            // Payment started before 1.4.0, which kept no record: check against the payment total, for a short time only.
+            $expected = [
+                'amount' => number_format(round((float) $payment['total'], 2), 2, '.', ''),
+                'currency' => (string) $payment['currency'],
+            ];
+        }
+        else {
+            // Every plugin on the store gets every invoice's events; another plugin's order can have the same number.
+            $this->logInfo('not ours', $invoiceId);
             return 200;
         }
-        // Payments created before 1.4.0 have no record; check against the payment total.
-        $expected = (is_array($recorded) && isset($recorded[$invoiceId])) ? $recorded[$invoiceId] : [
-            'amount' => number_format(round((float) $payment['total'], 2), 2, '.', ''),
-            'currency' => (string) $payment['currency'],
-        ];
 
         $decision = InvoiceDecision::decide($invoice, $this->provider === 'btcpay', (string) $expected['amount'], (string) $expected['currency']);
         if ($decision !== InvoiceDecision::PAID && ($claimsPaid || $decision === InvoiceDecision::MISMATCH)) {
@@ -86,8 +101,8 @@ class WebhookHandler
         }
         try {
             // Read again under the lock so a parallel webhook's change is seen.
-            $current = (string) ($this->payment($paymentId)['status'] ?? '');
-            $this->apply($decision, $paymentId, $current, $invoiceId);
+            $current = $this->payment($paymentId);
+            $this->apply($decision, $paymentId, (string) ($current['status'] ?? ''), (string) ($current['paidInvoice'] ?? ''), $invoiceId);
         } finally {
             $this->unlock($paymentId);
         }
@@ -95,9 +110,10 @@ class WebhookHandler
     }
 
     // Statuses only move forward; a completed, refunded or revoked payment is never changed.
-    private function apply(string $decision, int $paymentId, string $current, string $invoiceId): void
+    private function apply(string $decision, int $paymentId, string $current, string $paidInvoice, string $invoiceId): void
     {
-        if (in_array($current, self::FINAL, true)) {
+        // Paid is known from the plugin's own record, not from status names the merchant may reuse (6.8).
+        if ($paidInvoice !== '' || in_array($current, self::FINAL, true)) {
             $this->logInfo('already processed', $invoiceId);
             return;
         }
@@ -117,8 +133,14 @@ class WebhookHandler
             $target = '';
         }
         if ($target === '' || $target === $current) {
+            if ($decision === InvoiceDecision::PAID) {
+                $this->markPaid($paymentId, $invoiceId);
+            }
             $this->logInfo('no change', $invoiceId);
             return;
+        }
+        if ($decision === InvoiceDecision::PAID) {
+            $this->markPaid($paymentId, $invoiceId);
         }
         $this->setStatus($paymentId, $target, sprintf('Coinsnap invoice %s: %s', $invoiceId, $decision));
         $this->logInfo('status ' . $decision, $invoiceId);
@@ -144,7 +166,34 @@ class WebhookHandler
             'total' => (string) $payment->total,
             'currency' => (string) $payment->currency,
             'invoices' => edd_get_payment_meta($paymentId, '_coinsnap_invoices', true),
+            'paidInvoice' => (string) edd_get_payment_meta($paymentId, self::PAID_META, true),
+            'createdGmt' => $this->createdGmt($paymentId, $payment),
         ];
+    }
+
+    // Unix time the payment was created, or 0 if unknown.
+    protected function createdGmt(int $paymentId, $payment): int
+    {
+        if (function_exists('edd_get_order')) {
+            $order = edd_get_order($paymentId);
+            if ($order && !empty($order->date_created)) {
+                return (int) strtotime($order->date_created . ' UTC');
+            }
+        }
+        return 0;
+    }
+
+    // An unrecorded payment is accepted only if it was created before the upgrade and the upgrade was less than a day ago.
+    protected function legacyAllowed(array $payment, int $nowSeconds): bool
+    {
+        $since = (int) get_option(self::RECORDS_SINCE_OPTION, 0);
+        $created = (int) ($payment['createdGmt'] ?? 0);
+        return $since > 0 && $nowSeconds - $since < self::LEGACY_WINDOW_SECONDS && $created > 0 && $created < $since;
+    }
+
+    protected function markPaid(int $paymentId, string $invoiceId): void
+    {
+        edd_update_payment_meta($paymentId, self::PAID_META, $invoiceId);
     }
 
     protected function setStatus(int $paymentId, string $status, string $note): void

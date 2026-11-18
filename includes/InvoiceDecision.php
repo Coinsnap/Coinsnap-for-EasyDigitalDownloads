@@ -30,14 +30,13 @@ class InvoiceDecision
                 : self::MISMATCH;
         }
 
-        return match ($status) {
-            'Processing' => self::PROCESSING,
-            'Expired' => self::EXPIRED,
-            default => self::NONE,
-        };
+        if ($status === 'Processing') {
+            return self::PROCESSING;
+        }
+        return ($status === 'Expired') ? self::EXPIRED : self::NONE;
     }
 
-    private static function sameAmount(mixed $paidAmount, mixed $paidCurrency, string $expectedAmount, string $expectedCurrency): bool
+    private static function sameAmount($paidAmount, $paidCurrency, string $expectedAmount, string $expectedCurrency): bool
     {
         $expected = self::toMinorUnits($expectedAmount);
         $paid = self::toMinorUnits($paidAmount);
@@ -58,7 +57,7 @@ class InvoiceDecision
     }
 
     // Amount as an integer of 10^-8 units, parsed from the decimal string so it is never compared as a float.
-    public static function toMinorUnits(mixed $value): ?int
+    public static function toMinorUnits($value): ?int
     {
         if (is_int($value) || is_float($value)) {
             $value = number_format((float) $value, 8, '.', '');

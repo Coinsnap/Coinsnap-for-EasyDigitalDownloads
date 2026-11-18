@@ -33,6 +33,7 @@ require_once(dirname(__FILE__) . "/library/loader.php");
 require_once(dirname(__FILE__) . "/includes/Signature.php");
 require_once(dirname(__FILE__) . "/includes/InvoiceDecision.php");
 require_once(dirname(__FILE__) . "/includes/WebhookHandler.php");
+require_once(dirname(__FILE__) . "/includes/BtcpayKey.php");
 use Coinsnap\Client\Webhook;
 
 final class CoinsnapEDD {
@@ -44,6 +45,11 @@ final class CoinsnapEDD {
     public function __construct(){
         
         $this->coinsnap_dependencies();
+
+        // Start of the short window in which payments without an invoice record (created before 1.4.0) are still accepted.
+        if (get_option(\CoinsnapEDD\Webhook\WebhookHandler::RECORDS_SINCE_OPTION) === false) {
+            add_option(\CoinsnapEDD\Webhook\WebhookHandler::RECORDS_SINCE_OPTION, time(), '', false);
+        }
         
 	add_filter('edd_payment_gateways', array( $this, 'register_gateway' ), 1, 1);		
         
@@ -90,58 +96,33 @@ final class CoinsnapEDD {
                 exit();
             }
 
-            $data = [];
-            $data['apiKey'] = isset($_POST['apiKey']) ? sanitize_text_field(wp_unslash($_POST['apiKey'])) : null;
-            if (isset($_POST['permissions']) && is_array($_POST['permissions'])) {
-                foreach (array_map('sanitize_text_field', wp_unslash($_POST['permissions'])) as $key => $value) {
-                    $data['permissions'][$key] = $value;
-                }
-            }
-
-            try {
-                $keyWorks = !empty($data['apiKey']) && count((new \Coinsnap\Client\Store($btcpay_server_url, $data['apiKey']))->getStores()) > 0;
-            } catch (\Throwable $e) {
-                $keyWorks = false;
-            }
-            if (!$keyWorks) {
-                $notice->addNotice('error', __('Error on verifiying redirected API Key with stored BTCPay Server url. Aborting API wizard. Please try again or continue with manual setup.', 'coinsnap-for-easy-digital-downloads'));
+            // Only the key is taken from the POST. What it may do, and for which store, is asked from BTCPay.
+            $apiKey = isset($_POST['apiKey']) ? sanitize_text_field(wp_unslash($_POST['apiKey'])) : '';
+            $storeId = ($apiKey !== '') ? \CoinsnapEDD\BtcpayKey::verify($btcpay_server_url, $apiKey) : null;
+            if ($storeId === null) {
+                $notice->addNotice('error', __('The API key was refused. It must be limited to one store and have only the permissions this plugin asks for. Please try again or continue with manual setup.', 'coinsnap-for-easy-digital-downloads'));
                 wp_redirect($CoinsnapBTCPaySettingsUrl);
                 exit();
             }
 
-            if (isset($data['apiKey']) && isset($data['permissions'])) {
+            edd_update_option( 'btcpay_server_url', $btcpay_server_url);
+            edd_update_option( 'btcpay_api_key', $apiKey);
+            edd_update_option( 'btcpay_store_id', $storeId);
+            edd_update_option( 'coinsnap_provider', 'btcpay');
 
-                $apiData = new \Coinsnap\Client\BTCPayApiAuthorization($data);
-                if ($apiData->hasSingleStore() && $apiData->hasRequiredPermissions()) {
+            $notice->addNotice('success', __('Successfully received api key and store id from BTCPay Server API. Please finish setup by saving this settings form.', 'coinsnap-for-easy-digital-downloads'));
 
-                    edd_update_option( 'btcpay_server_url', $btcpay_server_url);
-                    edd_update_option( 'btcpay_api_key', $apiData->getApiKey());
-                    edd_update_option( 'btcpay_store_id', $apiData->getStoreID());
-                    edd_update_option( 'coinsnap_provider', 'btcpay');
-
-                    $notice->addNotice('success', __('Successfully received api key and store id from BTCPay Server API. Please finish setup by saving this settings form.', 'coinsnap-for-easy-digital-downloads'));
-
-                    // Register a webhook.
-
-                    if ($this->registerWebhook($btcpay_server_url, $apiData->getApiKey(), $apiData->getStoreID())) {
-                        $messageWebhookSuccess = __( 'Successfully registered a new webhook on BTCPay Server.', 'coinsnap-for-easy-digital-downloads' );
-                        $notice->addNotice('success', $messageWebhookSuccess, true );
-                    }
-                    else {
-                        $messageWebhookError = __( 'Could not register a new webhook on the store.', 'coinsnap-for-easy-digital-downloads' );
-                        $notice->addNotice('error', $messageWebhookError );
-                    }
-                    wp_redirect($CoinsnapBTCPaySettingsUrl);
-                    exit();
-                }
-                else {
-                    $notice->addNotice('error', __('Please make sure you only select one store on the BTCPay API authorization page.', 'coinsnap-for-easy-digital-downloads'));
-                    wp_redirect($CoinsnapBTCPaySettingsUrl);
-                    exit();
-                }
+            try {
+                $webhookReady = $this->webhookExists($btcpay_server_url, $apiKey, $storeId) || $this->registerWebhook($btcpay_server_url, $apiKey, $storeId);
+            } catch (\Throwable $e) {
+                $webhookReady = false;
             }
-
-            $notice->addNotice('error', __('Error processing the data from Coinsnap. Please try again.', 'coinsnap-for-easy-digital-downloads'));
+            if ($webhookReady) {
+                $notice->addNotice('success', __( 'Successfully registered a new webhook on BTCPay Server.', 'coinsnap-for-easy-digital-downloads' ), true );
+            }
+            else {
+                $notice->addNotice('error', __( 'Could not register a new webhook on the store.', 'coinsnap-for-easy-digital-downloads' ) );
+            }
             wp_redirect($CoinsnapBTCPaySettingsUrl);
             exit();
         });
@@ -272,16 +253,8 @@ final class CoinsnapEDD {
                 wp_send_json_error("Error validating BTCPayServer URL.");
             }
 
-            $permissions = array_merge([
-		'btcpay.store.canviewinvoices',
-		'btcpay.store.cancreateinvoice',
-		'btcpay.store.canviewstoresettings',
-		'btcpay.store.canmodifyinvoices'
-            ],
-            [
-		'btcpay.store.cancreatenonapprovedpullpayments',
-		'btcpay.store.webhooks.canmodifywebhooks',
-            ]);
+            // Only what the plugin uses; the callback refuses a key with anything more.
+            $permissions = \CoinsnapEDD\BtcpayKey::NEEDED_PERMISSIONS;
 
             $state = wp_generate_password(32, false);
             set_transient('coinsnapedd_btcpay_state_' . $state, $host, 15 * MINUTE_IN_SECONDS);
@@ -391,23 +364,7 @@ final class CoinsnapEDD {
                             esc_html_e('EasyDigitalDownloads: Established connection to Coinsnap Server', 'coinsnap-for-easy-digital-downloads');
                             echo '</p></div>';
 
-                            if ( !$this->webhookExists( $coinsnap_url, $coinsnap_api_key, $coinsnap_store_id ) ) {
-                                if ( !$this->registerWebhook( $coinsnap_url, $coinsnap_api_key, $coinsnap_store_id ) ) {
-                                    echo '<div class="notice notice-error edd-notice"><p>';
-                                    esc_html_e('EasyDigitalDownloads: Unable to create webhook on Coinsnap Server', 'coinsnap-for-easy-digital-downloads');
-                                    echo '</p></div>';
-                                }
-                                else {
-                                    echo '<div class="notice notice-success edd-notice"><p>';
-                                    esc_html_e('EasyDigitalDownloads: Successfully registered a new webhook on Coinsnap Server', 'coinsnap-for-easy-digital-downloads');
-                                    echo '</p></div>';
-                                }
-                            }
-                            else {
-                                echo '<div class="notice notice-info edd-notice"><p>';
-                                esc_html_e('EasyDigitalDownloads: Webhook already exists, skipping webhook creation', 'coinsnap-for-easy-digital-downloads');
-                                echo '</p></div>';
-                            }
+                            // A page view (GET, no nonce) never changes the webhook; the AJAX connection check does that.
                         }
                         else {
                             echo '<div class="notice notice-error edd-notice"><p>';
@@ -907,10 +864,26 @@ final class CoinsnapEDD {
         if (array_key_exists('coinsnap_api_key', $input) && trim((string) $input['coinsnap_api_key']) === '') {
             $input['coinsnap_api_key'] = (string) edd_get_option('coinsnap_api_key', '');
         }
-        if (array_key_exists('btcpay_api_key', $input) && trim((string) $input['btcpay_api_key']) === '') {
+        if (array_key_exists('btcpay_api_key', $input)) {
+            $submitted = trim((string) $input['btcpay_api_key']);
+            $serverUrl = trim((string) ($input['btcpay_server_url'] ?? ''));
             // A key is never sent to a server it was not created on.
-            $urlUnchanged = trim((string) ($input['btcpay_server_url'] ?? '')) === (string) edd_get_option('btcpay_server_url', '');
-            $input['btcpay_api_key'] = $urlUnchanged ? (string) edd_get_option('btcpay_api_key', '') : '';
+            $urlUnchanged = $serverUrl === (string) edd_get_option('btcpay_server_url', '');
+            $keep = $urlUnchanged ? (string) edd_get_option('btcpay_api_key', '') : '';
+            if ($submitted === '') {
+                $input['btcpay_api_key'] = $keep;
+            }
+            else {
+                // A pasted key must be limited to the configured store with only the needed permissions, as BTCPay reports it.
+                $storeId = trim((string) ($input['btcpay_store_id'] ?? ''));
+                if (\CoinsnapEDD\BtcpayKey::verify($serverUrl, $submitted, $storeId) === null) {
+                    $input['btcpay_api_key'] = $keep;
+                    add_settings_error('edd-notices', 'coinsnapedd-btcpay-key', __('The BTCPay API key was not saved: BTCPay must confirm that it is limited to the store ID entered here, with only the permissions this plugin needs.', 'coinsnap-for-easy-digital-downloads'), 'error');
+                }
+                else {
+                    $input['btcpay_api_key'] = $submitted;
+                }
+            }
         }
         return $input;
     }

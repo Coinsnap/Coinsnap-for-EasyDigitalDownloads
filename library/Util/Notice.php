@@ -10,7 +10,7 @@ class Notice {
    
     public function addNotice(string $type, string $content, $dismissible = 1){
         $notice_types_array = ['error','warning','success','info'];
-        if(in_array($type,$notice_types_array)){ $type = 'info'; }
+        if(!in_array($type,$notice_types_array, true)){ $type = 'info'; }
         if(!empty($content)){
             setcookie('coinsnap_notices['.hash('sha256',$content).']',wp_json_encode(['type' => $type,'message' => $content, 'dismissible' => $dismissible]),time()+5,'/');
         }

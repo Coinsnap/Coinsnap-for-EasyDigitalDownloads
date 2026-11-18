@@ -258,6 +258,12 @@ Coinsnap charges a 1% transaction fee.
 - Security: The library no longer sends an Access-Control-Allow-Origin: * header on every page that loads it, and API error replies are no longer copied into error messages.
 - Fix: A payment server outage no longer deletes and re-registers the webhook, and a failed webhook registration no longer causes a fatal error at checkout.
 - Fix: The exchange rate lookup gives up after 3 tries instead of retrying forever.
+- Security: The BTCPay Server setup callback asks BTCPay what the received key may do (api-keys/current) and takes the store from that answer; permissions and store ID posted with the key are ignored. Only a key limited to one store with exactly the needed permissions is accepted, also when it is pasted on the settings page. The setup asks only for the four permissions the plugin uses.
+- Security: An invoice that this plugin did not record for a payment (for example another plugin's order with the same number) is ignored. Payments started before 1.4.0 are accepted without a record only for one day after the upgrade.
+- Security: Once a payment is paid, a later webhook (for example a second invoice expiring) never changes it, even if the paid status is set to one that is otherwise still open.
+- Security: Opening the gateway settings page no longer registers or deletes webhooks; only the connection check (shop manager with a valid nonce) and checkout do.
+- Fix: The plugin runs on PHP 7.4 again (the new webhook classes used PHP 8 syntax).
+- Fix: Uninstalling removes the plugin's webhook record and its keys from the Easy Digital Downloads settings.
 
 ### 1.3.5 — 2026-05-24
 - Compatibility with Easy Digital Downloads 3.6.8 tested.
