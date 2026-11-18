@@ -4,7 +4,7 @@ Tags: bitcoin, lightning, easy digital downloads, digital products, btcpay
 Requires at least: 5.2
 Tested up to: 7.0.7
 Requires PHP: 7.4
-Stable tag: 1.3.5
+Stable tag: 1.4.0
 License: GPL2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -226,6 +226,23 @@ Coinsnap charges a 1% transaction fee.
 10. Successful Easy Digital Downloads payment
 
 == Changelog ==
+
+= 1.4.0 :: 2026-11-16 =
+* Security: Webhooks are verified with the timestamped X-Coinsnap-Signature header (Coinsnap) or BTCPay-Sig (BTCPay Server), with a timing-safe comparison. A missing webhook secret rejects every webhook.
+* Security: A payment is completed only when the invoice is settled, was created by this plugin for that payment, and matches the amount and currency it asked for. Before, any invoice in the store with a matching order ID changed the payment status.
+* Security: "Processing" no longer completes a payment (it unlocked downloads before the payment was confirmed). Completed, refunded and revoked payments are never changed by a later webhook. BTCPay invoices marked settled by hand are not accepted.
+* Security: The BTCPay Server setup callback only accepts a one-time code issued to a shop manager. Before, anyone could post an API key and switch the shop to their own BTCPay store.
+* Security: The API key fields no longer show the saved key; leave them empty to keep it. A BTCPay key is not kept when the server URL changes.
+* Security: Payment server error details and customer data are no longer shown at checkout or in admin notices.
+* Security: The library no longer sends an Access-Control-Allow-Origin: * header on every page that loads it, and API error replies are no longer copied into error messages.
+* Fix: A payment server outage no longer deletes and re-registers the webhook, and a failed webhook registration no longer causes a fatal error at checkout.
+* Fix: The exchange rate lookup gives up after 3 tries instead of retrying forever.
+* Security: The BTCPay Server setup callback asks BTCPay what the received key may do (api-keys/current) and takes the store from that answer; permissions and store ID posted with the key are ignored. Only a key limited to one store with exactly the needed permissions is accepted, also when it is pasted on the settings page. The setup asks only for the four permissions the plugin uses.
+* Security: An invoice that this plugin did not record for a payment (for example another plugin's order with the same number) is ignored. Payments started before 1.4.0 are accepted without a record only for one day after the upgrade.
+* Security: Once a payment is paid, a later webhook (for example a second invoice expiring) never changes it, even if the paid status is set to one that is otherwise still open.
+* Security: Opening the gateway settings page no longer registers or deletes webhooks; only the connection check (shop manager with a valid nonce) and checkout do.
+* Fix: The plugin runs on PHP 7.4 again (the new webhook classes used PHP 8 syntax).
+* Fix: Uninstalling removes the plugin's webhook record and its keys from the Easy Digital Downloads settings.
 
 = 1.3.5 :: 2026-05-24 =
 * Compatibility with Easy Digital Downloads 3.6.8 is tested.
