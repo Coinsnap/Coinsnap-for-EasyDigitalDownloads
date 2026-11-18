@@ -44,7 +44,10 @@ final class CoinsnapEDD {
     
     public function __construct(){
         
-        $this->coinsnap_dependencies();
+        // Without Easy Digital Downloads (or on a too old PHP/WP) only the admin notice is registered.
+        if (!$this->coinsnap_dependencies()) {
+            return;
+        }
 
         // Start of the short window in which payments without an invoice record (created before 1.4.0) are still accepted.
         if (get_option(\CoinsnapEDD\Webhook\WebhookHandler::RECORDS_SINCE_OPTION) === false) {
@@ -286,24 +289,25 @@ final class CoinsnapEDD {
     
     
     //  Checks if PHP version is too low or WooCommerce is not installed or CURL is not available and displays notice on admin dashboard
-    public function coinsnap_dependencies() {
+    public function coinsnap_dependencies(): bool {
         // Checks PHP version.
 	if ( version_compare( PHP_VERSION, COINSNAPEDD_PHP_VERSION, '<' ) ) {
-            add_action( 'admin_notices', array( self::$instance, 'coinsnap_php_version_notice' ) );
-            return;
+            add_action( 'admin_notices', array( $this, 'coinsnap_php_version_notice' ) );
+            return false;
 	}
 
 	// Checks if EDD is installed.
 	if ( ! class_exists( 'Easy_Digital_Downloads' ) ) {
-            add_action( 'admin_notices', array( self::$instance, 'coinsnap_edd_notice' ) );
-            return;
+            add_action( 'admin_notices', array( $this, 'coinsnap_edd_notice' ) );
+            return false;
 	}
 
 	// Checks WP version.
 	if ( version_compare( get_bloginfo( 'version' ), COINSNAPEDD_WP_VERSION, '<') ) {
-            add_action( 'admin_notices', array( self::$instance, 'coinsnap_wp_version_notice' ) );
-            return;
+            add_action( 'admin_notices', array( $this, 'coinsnap_wp_version_notice' ) );
+            return false;
 	}
+        return true;
     }
     
     public function coinsnap_php_version_notice() {
