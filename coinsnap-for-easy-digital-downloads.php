@@ -606,14 +606,10 @@ final class CoinsnapEDD {
             edd_send_back_to_checkout('?payment-mode=' . $purchase_data['post_data']['edd-gateway']);
         };
 
-        try {
-            $webhookReady = $this->webhookExists($this->getApiUrl(), $this->getApiKey(), $this->getStoreId())
-                || $this->registerWebhook($this->getApiUrl(), $this->getApiKey(), $this->getStoreId());
-        } catch (\Throwable $e) {
-            $webhookReady = false;
-        }
-        if (!$webhookReady) {
-            edd_record_gateway_error('Coinsnap', 'Coinsnap: the webhook could not be checked or registered');
+        // A customer's checkout never lists, deletes or registers webhooks: only the admin connection check
+        // and the BTCPay connect callback do. Without a connected webhook the payment could not be confirmed.
+        if (!$this->webhookConnected()) {
+            edd_record_gateway_error('Coinsnap', 'Coinsnap: no webhook is connected for this store. Open the Coinsnap gateway settings to connect it.');
             $checkoutError(__('The payment could not be started. Please try again later.', 'coinsnap-for-easy-digital-downloads'));
             return;
         }
@@ -836,8 +832,22 @@ final class CoinsnapEDD {
         if (empty($webhook['id']) || empty($webhook['secret'])) {
             return false;
         }
-        update_option('edd_settings_coinsnap_webhook', ['id' => $webhook['id'], 'secret' => $webhook['secret'], 'url' => $webhook['url'] ?? $this->get_webhook_url()], false);
+        update_option('edd_settings_coinsnap_webhook', ['id' => $webhook['id'], 'secret' => $webhook['secret'], 'url' => $webhook['url'] ?? $this->get_webhook_url(), 'store' => $this->webhookStoreKey($storeId)], false);
         return true;
+    }
+
+    private function webhookStoreKey(string $storeId): string {
+        return $this->get_payment_provider() . ':' . $storeId;
+    }
+
+    // Local check only (no API call): a webhook secret is stored, for the configured provider and store.
+    // Records written before this check existed have no 'store' entry and are accepted.
+    public function webhookConnected(): bool {
+        $stored = get_option('edd_settings_coinsnap_webhook');
+        if (!is_array($stored) || empty($stored['id']) || empty($stored['secret'])) {
+            return false;
+        }
+        return !isset($stored['store']) || $stored['store'] === $this->webhookStoreKey((string) $this->getStoreId());
     }
 
     // The stored key is never printed; an empty field keeps it.
