@@ -658,13 +658,8 @@ final class CoinsnapEDD {
                 $buyerEmail = isset($purchase_data['user_email']) ? $purchase_data['user_email'] : $purchase_data['user_info']['email'];
 		$buyerName =  $purchase_data['user_info']['first_name'] . ' ' . $purchase_data['user_info']['last_name'];
 		    		
-                $metadata = [];
-    		$metadata['orderNumber'] = $payment_id;
-                $metadata['customerName'] = $buyerName;
-                
-                if($this->get_payment_provider() === 'btcpay') {
-                    $metadata['orderId'] = $payment_id;
-                }
+                // Order data and the buyer's details. The plugin has no setting for customer data, so they are always sent.
+                $metadata = $this->invoiceMetadata((int) $payment_id, $purchase_data, $buyerEmail, $buyerName);
                 
                 if($this->get_payment_provider() === 'btcpay' && $currency !== 'BTC'){
                     $store = new \Coinsnap\Client\Store($this->getApiUrl(), $this->getApiKey());
@@ -771,6 +766,89 @@ final class CoinsnapEDD {
         status_header($status);
         echo $status === 200 ? 'OK' : ($status === 401 ? 'Unauthorized' : 'Retry');
         exit;
+    }
+
+    // Invoice metadata. orderId must stay the EDD payment ID: the webhook binds the invoice to the payment by it
+    // (Coinsnap: top-level orderId, which the backend also copies to metadata.orderId; BTCPay: metadata.orderId).
+    private function invoiceMetadata(int $paymentId, array $purchaseData, $buyerEmail, string $buyerName): array {
+        $userInfo = is_array($purchaseData['user_info'] ?? null) ? $purchaseData['user_info'] : [];
+        $address = is_array($userInfo['address'] ?? null) ? $userInfo['address'] : [];
+
+        $orderNumber = function_exists('edd_get_payment_number') ? (string) edd_get_payment_number($paymentId) : '';
+        if (function_exists('edd_get_admin_url')) {
+            $orderUrl = edd_get_admin_url(['page' => 'edd-payment-history', 'view' => 'view-order-details', 'id' => $paymentId]);
+        } else {
+            $orderUrl = admin_url('edit.php?post_type=download&page=edd-payment-history&view=view-order-details&id=' . $paymentId);
+        }
+
+        $lineItems = [];
+        $names = [];
+        $discountTotal = 0.0;
+        foreach ((array) ($purchaseData['cart_details'] ?? []) as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $downloadId = (int) ($item['id'] ?? 0);
+            $quantity = (int) ($item['quantity'] ?? 1);
+            $sku = (function_exists('edd_get_download_sku') && $downloadId > 0) ? (string) edd_get_download_sku($downloadId) : '';
+            $name = wp_strip_all_tags((string) ($item['name'] ?? ''));
+            $lineItems[] = self::withoutEmptyValues([
+                'name' => $name,
+                'sku' => ($sku === '-') ? '' : $sku,
+                'productId' => $downloadId > 0 ? $downloadId : null,
+                'priceId' => isset($item['item_number']['options']['price_id']) ? (int) $item['item_number']['options']['price_id'] : null,
+                'quantity' => $quantity,
+                'price' => isset($item['item_price']) ? (float) $item['item_price'] : null,
+                'total' => isset($item['price']) ? (float) $item['price'] : null,
+            ]);
+            $discountTotal += (float) ($item['discount'] ?? 0);
+            if ($name !== '') {
+                $names[] = $name . ($quantity > 1 ? ' x ' . $quantity : '');
+            }
+        }
+        $itemDesc = implode(', ', $names);
+        if (function_exists('mb_strlen') && mb_strlen($itemDesc) > 250) {
+            $itemDesc = mb_substr($itemDesc, 0, 247) . '...';
+        }
+        $itemCode = '';
+        if (count($lineItems) === 1) {
+            $itemCode = (string) ($lineItems[0]['sku'] ?? ($lineItems[0]['productId'] ?? ''));
+        }
+
+        $discount = (string) ($userInfo['discount'] ?? '');
+        $couponCodes = ($discount === '' || $discount === 'none') ? [] : array_values(array_filter(array_map('trim', explode(',', $discount))));
+        $tax = (float) ($purchaseData['tax'] ?? 0);
+
+        return self::withoutEmptyValues([
+            'orderId' => (string) $paymentId,
+            'orderNumber' => $orderNumber !== '' ? $orderNumber : (string) $paymentId,
+            'orderUrl' => $orderUrl,
+            'customerName' => trim($buyerName),
+            'buyerName' => trim($buyerName),
+            'buyerEmail' => is_string($buyerEmail) ? $buyerEmail : '',
+            'buyerAddress1' => (string) ($address['line1'] ?? ''),
+            'buyerAddress2' => (string) ($address['line2'] ?? ''),
+            'buyerCity' => (string) ($address['city'] ?? ''),
+            'buyerState' => (string) ($address['state'] ?? ''),
+            'buyerZip' => (string) ($address['zip'] ?? ''),
+            'buyerCountry' => (string) ($address['country'] ?? ''),
+            'itemDesc' => $itemDesc,
+            'itemCode' => $itemCode,
+            'lineItems' => $lineItems,
+            'couponCodes' => $couponCodes,
+            'discountTotal' => $discountTotal > 0 ? round($discountTotal, 2) : null,
+            'taxTotal' => $tax > 0 ? $tax : null,
+            'platform' => 'easydigitaldownloads',
+            'pluginVersion' => COINSNAPEDD_PLUGIN_VERSION,
+            'language' => function_exists('determine_locale') ? determine_locale() : get_locale(),
+        ]);
+    }
+
+    // Drops null, '' and [] so the invoice carries only values that exist.
+    private static function withoutEmptyValues(array $values): array {
+        return array_filter($values, function ($value) {
+            return $value !== null && $value !== '' && $value !== [];
+        });
     }
 
     private function get_payment_provider() {
