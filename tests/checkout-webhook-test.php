@@ -45,6 +45,9 @@ function edd_set_error($k, $m) { $GLOBALS['errors'][] = $m; }
 function edd_send_back_to_checkout($a = '') { throw new CheckoutStopped('back'); }
 function wp_redirect($url) { throw new CheckoutStopped('redirect ' . $url); }
 function is_wp_error($r) { return false; }
+function wp_strip_all_tags($s) { return strip_tags((string) $s); }
+function get_locale() { return 'en_US'; }
+function admin_url($p = '') { return 'https://shop.example/wp-admin/' . $p; }
 function wp_remote_retrieve_headers($r) { return new class { public function getAll() { return []; } }; }
 
 // Fake Coinsnap API and rates; every request is recorded.
